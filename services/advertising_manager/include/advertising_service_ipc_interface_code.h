@@ -13,24 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_CLOUD_ADVERTISING_INTERFACE_H
-#define OHOS_CLOUD_ADVERTISING_INTERFACE_H
+#ifndef OHOS_CLOUD_ADVERTISING_IPC_CODE_H
+#define OHOS_CLOUD_ADVERTISING_IPC_CODE_H
 
-#include "request_data.h"
-
-#include "iremote_broker.h"
-#include "iremote_object.h"
-#include "errors.h"
-
+/* SAID:6104 */
 namespace OHOS {
 namespace Cloud {
-class IAdvertisingService : public IRemoteBroker {
-public:
-    virtual ErrCode LoadAd(const std::string &request, const std::string &options, const sptr<IRemoteObject> &callback,
-        uint32_t callingUid) = 0;
-
-    DECLARE_INTERFACE_DESCRIPTOR(u"ohos.cloud.advertising.IAdvertisingService");
-};
+    enum class AdsInterfaceCode {
+        LOAD_AD = 1,
+    };
 } // namespace Cloud
 } // namespace OHOS
-#endif // OHOS_CLOUD_ADVERTISING_INTERFACE_H
+#endif // OHOS_CLOUD_ADVERTISING_IPC_CODE_H

@@ -16,10 +16,11 @@
 #ifndef OHOS_CLOUD_ADVERTISING_PROXY_H
 #define OHOS_CLOUD_ADVERTISING_PROXY_H
 
+#include "iremote_proxy.h"
 #include "request_data.h"
 
 #include "ad_service_interface.h"
-#include "iremote_proxy.h"
+#include "advertising_service_ipc_interface_code.h"
 
 namespace OHOS {
 namespace Cloud {
@@ -32,7 +33,7 @@ public:
         uint32_t callingUid) override;
 
 private:
-    ErrCode SendRequest(IAdvertisingService::Message code, MessageParcel &data, MessageParcel &reply);
+    ErrCode SendRequest(AdsInterfaceCode code, MessageParcel &data, MessageParcel &reply);
 
 private:
     static inline BrokerDelegator<AdvertisingProxy> delegator_;

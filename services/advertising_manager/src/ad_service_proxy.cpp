@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 
+#include "iremote_broker.h"
 #include "ad_service_proxy.h"
 #include "ad_hilog_wreapper.h"
 #include "ad_service_interface.h"
 #include "ad_inner_error_code.h"
-#include "iremote_broker.h"
 #include "message_option.h"
+#include "advertising_service_ipc_interface_code.h"
 
 namespace OHOS {
 namespace Cloud {
@@ -47,7 +48,7 @@ ErrCode AdvertisingProxy::LoadAd(const std::string &request, const std::string &
         return ERR_AD_COMMON_AD_WRITE_PARCEL_ERROR;
     }
     MessageParcel reply;
-    ErrCode result = SendRequest(IAdvertisingService::Message::LOAD_AD, data, reply);
+    ErrCode result = SendRequest(AdsInterfaceCode::LOAD_AD, data, reply);
     if (result != ERR_OK) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_CLIENT, "failed to send request, errCode: %{public}d", result);
         return result;
@@ -59,7 +60,7 @@ ErrCode AdvertisingProxy::LoadAd(const std::string &request, const std::string &
     return result;
 }
 
-ErrCode AdvertisingProxy::SendRequest(IAdvertisingService::Message code, MessageParcel &data, MessageParcel &reply)
+ErrCode AdvertisingProxy::SendRequest(AdsInterfaceCode code, MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> remote = Remote();
     if (remote == nullptr) {

@@ -497,15 +497,17 @@ void GetCloudServiceProvider(CloudServiceProvider &cloudServiceProvider)
 
     Json::Value cloudServiceBundleName = jsonValue["providerBundleName"];
     Json::Value cloudServiceAbilityName = jsonValue["providerAbilityName"];
-
+    Json::Value cloudServiceUIAbilityName = jsonValue["providerUIAbilityName"];
     cloudServiceProvider.bundleName = cloudServiceBundleName[0].asString();
     cloudServiceProvider.abilityName = cloudServiceAbilityName[0].asString();
+    cloudServiceProvider.uiAbilityName = cloudServiceUIAbilityName[0].asString();
 
     ifs.close();
 
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI,
-        "Cloud Service provider from config bundleName is %{public}s, abilityName is %{public}s",
-        cloudServiceProvider.bundleName.c_str(), cloudServiceProvider.abilityName.c_str());
+        "Cloud Service provider from config bundleName is %{public}s, abilityName is %{public}s, uiAbility is %{public}s",
+        cloudServiceProvider.bundleName.c_str(), cloudServiceProvider.abilityName.c_str(),
+        cloudServiceProvider.uiAbilityName.c_str());
 }
 
 int32_t ConnectServiceExtensionAbility(std::string &adConfigStrJson, const sptr<IAdsInitCallback> &callback)
@@ -902,7 +904,11 @@ napi_value Advertising::ShowAd(napi_env env, napi_callback_info info)
     }
     // assemble
     AssembShowAdParas(want, advertisment);
-    want.SetElementName(AD_DEFAULT_BUNDLE_NAME, AD_DEFAULT_SHOW_AD_ABILITY_NAME);
+    CloudServiceProvider cloudServiceProvider;
+    GetCloudServiceProvider(cloudServiceProvider);
+    std::string bundleName = cloudServiceProvider.bundleName;
+    std::string abilityName = cloudServiceProvider.uiAbilityName;
+    want.SetElementName(bundleName, abilityName);
     want.SetParam(AD_DISPLAY_OPTIONS, displayOptionsString);
     ErrCode ret = AAFwk::AbilityManagerClient::GetInstance()->StartAbility(want);
     if (ret != ERR_SEND_OK) {

@@ -1,5 +1,6 @@
 {
-    "providerBundleName": [],
-    "providerAbilityName": [],
-    "providerUEAAbilityName": []
+    "providerBundleName": [""],
+    "providerAbilityName": [""],
+    "providerUIAbilityName": [""],
+    "providerUEAAbilityName": [""]
 }

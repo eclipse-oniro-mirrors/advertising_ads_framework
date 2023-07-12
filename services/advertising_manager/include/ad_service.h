@@ -36,6 +36,12 @@ enum class AdsServiceRunningState {
     STATE_RUNNING
 };
 
+struct AdServiceElementName {
+    std::string bundleName;
+    std::string extensionName;
+    int userId;
+};
+
 class AdvertisingService : public SystemAbility, public AdvertisingStub {
     DECLARE_SYSTEM_ABILITY(AdvertisingService);
 
@@ -47,11 +53,7 @@ public:
     virtual ~AdvertisingService() override;
     ErrCode LoadAd(const std::string &request, const std::string &options, const sptr<IRemoteObject> &callback,
         uint32_t callingUid) override;
-    struct AdServiceElementName {
-        std::string bundleName = "";
-        std::string extensionName = "";
-        int userId;
-    };
+    void GetCloudServiceProvider(AdServiceElementName &cloudServiceProvider);
 
 protected:
     void OnStart() override;

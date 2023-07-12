@@ -23,14 +23,14 @@ class AdvertisingComponent extends ViewPU {
     this.displayOptions = void 0;
     this.interactionListener = void 0;
     this.want = void 0;
-    this.setInitiallyProvidedValue(t)
+    this.setInitiallyProvidedValue(t);
   }
 
   setInitiallyProvidedValue(e) {
     void 0 !== e.ads && (this.ads = e.ads);
     void 0 !== e.displayOptions && (this.displayOptions = e.displayOptions);
     void 0 !== e.interactionListener && (this.interactionListener = e.interactionListener);
-    void 0 !== e.want && (this.want = e.want)
+    void 0 !== e.want && (this.want = e.want);
   }
 
   updateStateVars(e) {
@@ -41,11 +41,11 @@ class AdvertisingComponent extends ViewPU {
 
   aboutToBeDeleted() {
     SubscriberManager.Get().delete(this.id__());
-    this.aboutToBeDeletedInternal()
+    this.aboutToBeDeletedInternal();
   }
 
   onStatusCallback(e) {
-    this.interactionListener.onStatusChanged(e.status, e.ad, e.data)
+    this.interactionListener.onStatusChanged(e.status, e.ad, e.data);
   }
 
   aboutToAppear() {
@@ -66,11 +66,11 @@ class AdvertisingComponent extends ViewPU {
       let s = String.fromCharCode(...new Uint8Array(o));
       s = s.replace(/[\r\n\t\"]/g, "").replace(/\s*/g, "").replace(/\[|\]/g, "");
       e = this.toMap(s);
-      hilog.info(65280, "AdvertisingComponent", "file succeed")
+      hilog.info(65280, "AdvertisingComponent", "file succeed");
     } catch (e) {
-      hilog.error(65280, "AdvertisingComponent", `open file failed with error:${e.code}, message:${e.message}`)
+      hilog.error(65280, "AdvertisingComponent", `open file failed with error:${e.code}, message:${e.message}`);
     }
-    return e
+    return e;
   }
 
   toMap(e) {
@@ -82,7 +82,7 @@ class AdvertisingComponent extends ViewPU {
       if (i > -1) {
         const e = s.substring(0, i);
         const t = s.substring(i + 1);
-        o[e] = t
+        o[e] = t;
       }
     }
     return o
@@ -94,7 +94,7 @@ class AdvertisingComponent extends ViewPU {
       Row.create();
       Row.height("100%");
       t || Row.pop();
-      ViewStackProcessor.StopGetAccessRecording()
+      ViewStackProcessor.StopGetAccessRecording();
     }));
 
     this.observeComponentCreation(((e, t) => {
@@ -102,7 +102,7 @@ class AdvertisingComponent extends ViewPU {
       Column.create();
       Column.width("100%");
       t || Column.pop();
-      ViewStackProcessor.StopGetAccessRecording()
+      ViewStackProcessor.StopGetAccessRecording();
     }));
 
     this.observeComponentCreation(((e, t) => {
@@ -111,16 +111,16 @@ class AdvertisingComponent extends ViewPU {
       UIExtensionComponent.width("100%");
       UIExtensionComponent.height("100%");
       t || UIExtensionComponent.pop();
-      ViewStackProcessor.StopGetAccessRecording()
+      ViewStackProcessor.StopGetAccessRecording();
     }));
 
     UIExtensionComponent.pop();
     Column.pop();
-    Row.pop()
+    Row.pop();
   }
 
   rerender() {
-    this.updateDirtyElements()
+    this.updateDirtyElements();
   }
 }
 

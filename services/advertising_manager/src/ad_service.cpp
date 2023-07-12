@@ -29,6 +29,7 @@
 #include "system_ability_definition.h"
 #include "extension_ability_info.h"
 #include "element_name.h"
+#include "config_policy_utils.h"
 
 #include "ad_service.h"
 #include "ad_service_proxy.h"
@@ -96,14 +97,45 @@ sptr<AdvertisingService> AdvertisingService::GetInstance()
     return instance_;
 }
 
+void AdvertisingService::GetCloudServiceProvider(AdServiceElementName &cloudServiceProvider)
+{
+    char pathBuff[MAX_PATH_LEN];
+    GetOneCfgFile(DEPENDENCY_CONFIG_FILE_RELATIVE_PATH.c_str(), pathBuff, MAX_PATH_LEN);
+    char realPath[PATH_MAX];
+    if (realpath(pathBuff, realPath) == nullptr) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_SERVICE, "Parse realpath fail");
+        return;
+    }
+    std::ifstream ifs;
+    ifs.open(realPath);
+    if (!ifs) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_SERVICE, "Open file error.");
+        return;
+    }
+    Json::Value jsonValue;
+    Json::CharReaderBuilder builder;
+    builder["collectComments"] = true;
+    JSONCPP_STRING errs;
+    if (!parseFromStream(builder, ifs, &jsonValue, &errs)) {
+        ifs.close();
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_SERVICE, "Read file failed %{public}s.", errs.c_str());
+        return;
+    }
+    Json::Value cloudServiceBundleName = jsonValue["providerBundleName"];
+    Json::Value cloudServiceAbilityName = jsonValue["providerAbilityName"];
+
+    cloudServiceProvider.bundleName = cloudServiceBundleName[0].asString();
+    cloudServiceProvider.extensionName = cloudServiceAbilityName[0].asString();
+    cloudServiceProvider.userId = USER_ID;
+    ifs.close();
+}
+
 ErrCode AdvertisingService::LoadAd(const std::string &request, const std::string &options,
     const sptr<IRemoteObject> &callback, uint32_t callingUid)
 {
     if (adServiceElementName_.bundleName.empty() || adServiceElementName_.extensionName.empty()) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_SERVICE, "adServiceElementName is null, read from config");
-        adServiceElementName_.bundleName = AD_DEFAULT_BUNDLE_NAME;
-        adServiceElementName_.extensionName = AD_DEFAULT_ABILITY_NAME;
-        adServiceElementName_.userId = USER_ID;
+        GetCloudServiceProvider(adServiceElementName_);
     }
     sptr<IAdLoadCallback> castedCallback = iface_cast<IAdLoadCallback>(callback);
     if (castedCallback == nullptr) {

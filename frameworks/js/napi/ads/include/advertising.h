@@ -99,6 +99,7 @@ struct AdvertisingRequestContext {
 struct CloudServiceProvider {
     std::string bundleName;
     std::string abilityName;
+    std::string uiAbilityName;
 };
 
 class Advertising {
