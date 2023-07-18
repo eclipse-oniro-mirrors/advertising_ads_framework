@@ -13,10 +13,12 @@
  * limitations under the License.
  */
 
-var fs = globalThis.requireNapi("file.fs");
-var hilog = globalThis.requireNapi("hilog");
+const fs = globalThis.requireNapi('file.fs');
+const hilog = globalThis.requireNapi('hilog');
+const HILOG_DOMAIN_CODE = 65280;
+const READ_FILE_BUFFER_SIZE = 4096;
 
-class AdvertisingComponent extends ViewPU {
+class AdComponent extends ViewPU {
   constructor(e, t, o, s = -1) {
     super(e, o, s);
     this.ads = void 0;
@@ -54,45 +56,45 @@ class AdvertisingComponent extends ViewPU {
       bundleName: e.providerBundleName,
       abilityName: e.providerUEAAbilityName,
       parameters: { ads: this.ads, displayOptions: this.displayOptions }
-    }
+    };
   }
 
   getConfigJsonData() {
     let e = null;
     try {
-      const t = fs.openSync("/system/etc/cloud/advertising/ad_service_config.json");
-      const o = new ArrayBuffer(4096);
+      const t = fs.openSync('/system/etc/cloud/advertising/ad_service_config.json');
+      const o = new ArrayBuffer(READ_FILE_BUFFER_SIZE);
       fs.readSync(t.fd, o);
       let s = String.fromCharCode(...new Uint8Array(o));
-      s = s.replace(/[\r\n\t\"]/g, "").replace(/\s*/g, "").replace(/\[|\]/g, "");
+      s = s.replace(/[\r\n\t\"]/g, '').replace(/\s*/g, '').replace(/\[|\]/g, '');
       e = this.toMap(s);
-      hilog.info(65280, "AdvertisingComponent", "file succeed");
+      hilog.info(HILOG_DOMAIN_CODE, 'AdComponent', 'file succeed');
     } catch (e) {
-      hilog.error(65280, "AdvertisingComponent", `open file failed with error:${e.code}, message:${e.message}`);
+      hilog.error(HILOG_DOMAIN_CODE, 'AdComponent', `open file failed with error:${e.code}, message:${e.message}`);
     }
     return e;
   }
 
   toMap(e) {
-    const t = (e = e.replace(/[{}]/g, "")).split(",");
+    const t = (e = e.replace(/[{}]/g, '')).split(',');
     const o = {};
-    for (let e = 0;e < t.length; e++) {
+    for (let e = 0; e < t.length; e++) {
       const s = t[e];
-      const i = s.indexOf(":");
+      const i = s.indexOf(':');
       if (i > -1) {
         const e = s.substring(0, i);
         const t = s.substring(i + 1);
         o[e] = t;
       }
     }
-    return o
+    return o;
   }
 
   initialRender() {
     this.observeComponentCreation(((e, t) => {
       ViewStackProcessor.StartGetAccessRecordingFor(e);
       Row.create();
-      Row.height("100%");
+      Row.height('100%');
       t || Row.pop();
       ViewStackProcessor.StopGetAccessRecording();
     }));
@@ -100,7 +102,7 @@ class AdvertisingComponent extends ViewPU {
     this.observeComponentCreation(((e, t) => {
       ViewStackProcessor.StartGetAccessRecordingFor(e);
       Column.create();
-      Column.width("100%");
+      Column.width('100%');
       t || Column.pop();
       ViewStackProcessor.StopGetAccessRecording();
     }));
@@ -108,8 +110,8 @@ class AdvertisingComponent extends ViewPU {
     this.observeComponentCreation(((e, t) => {
       ViewStackProcessor.StartGetAccessRecordingFor(e);
       UIExtensionComponent.create(this.want);
-      UIExtensionComponent.width("100%");
-      UIExtensionComponent.height("100%");
+      UIExtensionComponent.width('100%');
+      UIExtensionComponent.height('100%');
       t || UIExtensionComponent.pop();
       ViewStackProcessor.StopGetAccessRecording();
     }));
@@ -124,4 +126,4 @@ class AdvertisingComponent extends ViewPU {
   }
 }
 
-export default { AdvertisingComponent };
+export default { AdComponent };

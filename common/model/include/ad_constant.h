@@ -23,9 +23,6 @@ namespace Cloud {
 // The system component ID of the advertising is 6104.
 static const int32_t ADVERTISING_ID = 6104;
 
-// init
-static const int32_t SEND_INIT_REQUEST_CODE = 0;
-
 // request ad
 static const int32_t SEND_LOAD_AD_REQUEST_CODE = 1;
 
@@ -86,20 +83,8 @@ static const std::string AD_DISPLAY_OPTIONS_TYPE = "audioFocusType";
 // Advertisement-adType
 static const std::string AD_RESPONSE_AD_TYPE = "adType";
 
-// Advertisement-contentId
-static const std::string AD_RESPONSE_CONTENT_ID = "contentId";
-
-// Advertisement-adCloseKeywords
-static const std::string AD_RESPONSE_KEYWORDS = "adCloseKeywords";
-
 // Advertisement-rewardVerifyConfig
 static const std::string AD_RESPONSE_REWARD_CONFIG = "rewardVerifyConfig";
-
-// Advertisement-creativeType
-static const std::string AD_RESPONSE_CREATIVE_TYPE = "creativeType";
-
-// Advertisement-adContentData
-static const std::string AD_RESPONSE_CONTENT_DATA = "adContentData";
 
 // Advertisement-uniqueId
 static const std::string AD_RESPONSE_UNIQUE_ID = "uniqueId";
@@ -127,9 +112,6 @@ static const std::string AD_DISPLAY_OPTIONS = "AdDisplayOptions";
 
 // Advertisement
 static const std::string AD_ADVERTISMENT = "Advertisement";
-
-// parameter error
-static const std::string PARAM_ERROR = "401";
 } // namespace Cloud
 } // namespace OHOS
 #endif // OHOS_CLOUD_ADS_INIT_DEFINE_H

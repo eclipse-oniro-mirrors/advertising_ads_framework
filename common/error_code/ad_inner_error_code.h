@@ -76,18 +76,8 @@ const int32_t ERR_AD_COMMON_AD_SHOW_AD_ERROR = 15;
 
 enum AdsError : int32_t {
     ERR_SEND_OK = 0,
-    ERR_INVALID_PARAM = 401,
-    ERR_FROM_KIT_SYSTEM_INTERNAL = 100001,
-    ERR_FROM_KIT_INIT_OR_UPDATE_SERVICE = 100002,
-    ERR_SYSTEM_INTERNAL = 21800001,
-    ERR_INIT_OR_UPDATE_SERVICE = 21800002,
 };
 
-static std::map<int32_t, std::string> adsErrCodeMsgMap = {
-    {ERR_INVALID_PARAM, "Invalid input parameter."},
-    {ERR_SYSTEM_INTERNAL, "System internal error."},
-    {ERR_INIT_OR_UPDATE_SERVICE, "Failed to initialize the Advertising configuration."},
-};
 } // namespace Cloud
 } // namespace OHOS
 #endif // ADS_ERROR_CODE_H

@@ -29,43 +29,20 @@
 #include "ad_constant.h"
 #include "ability_manager_client.h"
 #include "ad_service_interface.h"
-#include "ad_init_common.h"
-#include "ad_init_ability_connect.h"
-#include "tag_for_child.h"
-#include "non_personalized_ad.h"
-#include "content_classification.h"
-#include "ad_constant.h"
-#include "ad_init_callback_stub.h"
 #include "config_policy_utils.h"
 
 namespace OHOS {
 namespace CloudNapi {
 namespace AdsNapi {
-namespace {
-const int32_t NAPI_RETURN_ONE = 1;
-const int32_t NO_ERROR_INT32 = 0;
-const size_t CALLBACK_ARGS_LENGTH = 2;
-const int8_t CALLBACK_REEOR = 0;
-const int8_t CALLBACK_DATA = 1;
-const int32_t ERROR = -1;
-const size_t ADS_MAX_PARA = 3;
-static constexpr const int MAX_STRING_LENGTH = 65536;
-} // namespace
-
 using Want = OHOS::AAFwk::Want;
-
-static const int32_t SHOW_AD_PARA = 3;
+static constexpr const int MAX_STRING_LENGTH = 65536;
+static const int32_t SHOW_AD_PARA = 2;
 static const int32_t AD_LOADER_PARA = 3;
+static const int32_t AD_STANDARD_SIZE = 6;
 const std::string AD_LOADER_CLASS_NAME = "AdLoader";
 thread_local napi_ref Advertising::adRef_ = nullptr;
 static const int32_t STR_MAX_SIZE = 256;
 static const int32_t CUSTOM_DATA_MAX_SIZE = 1024 * 1024; // 1M
-
-std::mutex getAdsLock_;
-napi_ref g_callback;
-napi_deferred g_deferred;
-bool g_isCallback = false;
-napi_threadsafe_function tsfn;
 
 napi_value NapiGetNull(napi_env env)
 {
@@ -74,163 +51,11 @@ napi_value NapiGetNull(napi_env env)
     return result;
 }
 
-napi_value WrapVoidToJS(napi_env env)
-{
-    napi_value result = nullptr;
-    NAPI_CALL(env, napi_get_null(env, &result));
-    return result;
-}
-
-napi_value SetNonErrorValue(napi_env env, int32_t errCode)
-{
-    napi_value result = nullptr;
-    napi_value eCode = nullptr;
-    NAPI_CALL(env, napi_create_int32(env, errCode, &eCode));
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Set non error value to callback result.");
-    NAPI_CALL(env, napi_create_object(env, &result));
-    NAPI_CALL(env, napi_set_named_property(env, result, "code", eCode));
-    return result;
-}
-
-napi_value SetCallbackErrorValue(napi_env env, int32_t errCode)
-{
-    napi_value result = nullptr;
-    napi_value eCode = nullptr;
-    napi_value eData = nullptr;
-    NAPI_CALL(env, napi_create_int32(env, errCode, &eCode));
-    NAPI_CALL(env, napi_create_string_utf8(env, adsErrCodeMsgMap[errCode].c_str(), NAPI_AUTO_LENGTH, &eData));
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "errorCode is : %{public}d , errordata is : %{public}s", errCode,
-        adsErrCodeMsgMap[errCode].c_str());
-    NAPI_CALL(env, napi_create_object(env, &result));
-    NAPI_CALL(env, napi_set_named_property(env, result, "code", eCode));
-    NAPI_CALL(env, napi_set_named_property(env, result, "data", eData));
-    return result;
-}
-
-void SetPromise(const napi_env &env, const napi_deferred &deferred, const int32_t &errorCode)
-{
-    napi_value result = nullptr;
-    result = WrapVoidToJS(env);
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "errorCode is : %{public}d ", errorCode);
-    if (errorCode == NO_ERROR_INT32) {
-        NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, deferred, result));
-    } else {
-        result = SetCallbackErrorValue(env, errorCode);
-        NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, deferred, result));
-    }
-}
-
-napi_value ParaError(const napi_env &env, const napi_ref &callback)
-{
-    if (callback != nullptr) {
-        return NapiGetNull(env);
-    }
-
-    napi_deferred deferred = nullptr;
-    napi_value promise = nullptr;
-    napi_create_promise(env, &deferred, &promise);
-    SetPromise(env, deferred, ERROR);
-    return promise;
-}
-
-void SetCallback(const napi_env &env, const napi_ref &callbackIn, const int32_t &errorCode)
-{
-    napi_value undefined = nullptr;
-    napi_get_undefined(env, &undefined);
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "errorCode is : %{public}d ", errorCode);
-    napi_value callback = nullptr;
-    napi_value resultout = nullptr;
-    napi_get_reference_value(env, callbackIn, &callback);
-    napi_value results[CALLBACK_ARGS_LENGTH] = {0};
-    if (errorCode == NO_ERROR_INT32) {
-        results[CALLBACK_REEOR] = SetNonErrorValue(env, errorCode);
-    } else {
-        results[CALLBACK_REEOR] = SetCallbackErrorValue(env, errorCode);
-    }
-    results[CALLBACK_DATA] = WrapVoidToJS(env);
-    NAPI_CALL_RETURN_VOID(env,
-        napi_call_function(env, undefined, callback, CALLBACK_ARGS_LENGTH, &results[CALLBACK_REEOR], &resultout));
-}
-
-void ReturnCallbackPromise(const napi_env &env, AsyncCallbackInfoAdsInit *&info)
-{
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "isCallback is : %{public}d", info->isCallback);
-    if (info->isCallback) {
-        SetCallback(env, info->callback, info->errorCode);
-    } else {
-        SetPromise(env, info->deferred, info->errorCode);
-    }
-}
-
-void DoCallback(napi_env env, napi_value callbackfunc, void *context, void *data)
-{
-    ThreadSafeResultCode *retData = (struct ThreadSafeResultCode *)data;
-    struct AsyncCallbackInfoAdsInit *asynccallbackinfo = new AsyncCallbackInfoAdsInit;
-    asynccallbackinfo->callback = g_callback;
-    asynccallbackinfo->deferred = g_deferred;
-    asynccallbackinfo->isCallback = g_isCallback;
-
-    if (retData->resultCode == ERR_INVALID_PARAM) {
-        asynccallbackinfo->errorCode = ERR_INVALID_PARAM;
-    } else if (retData->resultCode == ERR_FROM_KIT_SYSTEM_INTERNAL) {
-        asynccallbackinfo->errorCode = ERR_SYSTEM_INTERNAL;
-    } else if (retData->resultCode == ERR_FROM_KIT_INIT_OR_UPDATE_SERVICE) {
-        asynccallbackinfo->errorCode = ERR_INIT_OR_UPDATE_SERVICE;
-    }
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "errorCode is : %{public}d", asynccallbackinfo->errorCode);
-    ReturnCallbackPromise(env, asynccallbackinfo);
-    delete retData;
-    retData = nullptr;
-    delete asynccallbackinfo;
-    asynccallbackinfo = nullptr;
-    napi_delete_reference(env, g_callback);
-    g_deferred = NULL;
-}
-
 int32_t GetInt32FromValue(napi_env env, napi_value value)
 {
     int32_t ret = 2;
     NAPI_CALL_BASE(env, napi_get_value_int32(env, value, &ret), ret);
     return ret;
-}
-
-napi_value GetNamedProperty(napi_env env, napi_value object, const std::string &propertyName)
-{
-    napi_value value = nullptr;
-    NAPI_CALL(env, napi_get_named_property(env, object, propertyName.c_str(), &value));
-    return value;
-}
-
-bool HasNamedProperty(napi_env env, napi_value object, const std::string &propertyName)
-{
-    bool hasProperty = false;
-    NAPI_CALL_BASE(env, napi_has_named_property(env, object, propertyName.c_str(), &hasProperty), false);
-    return hasProperty;
-}
-
-bool CheckNapiValueType(napi_env env, napi_value value)
-{
-    if (value) {
-        napi_valuetype valueType = napi_valuetype::napi_undefined;
-        napi_typeof(env, value, &valueType);
-        if (valueType != napi_valuetype::napi_undefined && valueType != napi_valuetype::napi_null) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool CheckNullProperty(napi_env env, napi_value object, const std::string &propertyName)
-{
-    if (!HasNamedProperty(env, object, propertyName)) {
-        return true;
-    }
-    napi_value value = GetNamedProperty(env, object, propertyName);
-
-    if (CheckNapiValueType(env, value)) {
-        return false;
-    }
-    return true;
 }
 
 std::string GetStringFromValueUtf8(napi_env env, napi_value value)
@@ -243,227 +68,6 @@ std::string GetStringFromValueUtf8(napi_env env, napi_value value)
         return result.append(str, length);
     }
     return result;
-}
-
-void CheckAdOptions(const napi_env &env, napi_value object, const std::string &adOptionName)
-{
-    bool typeNull = CheckNullProperty(env, object, adOptionName);
-    if (typeNull) {
-        ADS_HILOGE(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Invalid %{public}s value", adOptionName.c_str());
-    }
-}
-
-std::string UnwrapStringFromJS(napi_env env, napi_value param, const std::string &defaultValue)
-{
-    size_t size = 0;
-    if (napi_get_value_string_utf8(env, param, nullptr, 0, &size) != napi_ok) {
-        return defaultValue;
-    }
-
-    std::string value("");
-    if (size == 0) {
-        return defaultValue;
-    }
-
-    char *buf = new (std::nothrow) char[size + 1];
-    if (buf == nullptr) {
-        return value;
-    }
-    (void)memset_s(buf, size + 1, 0, size + 1);
-
-    bool rev = napi_get_value_string_utf8(env, param, buf, size + 1, &size) == napi_ok;
-    if (rev) {
-        value = buf;
-    } else {
-        value = defaultValue;
-    }
-
-    delete[] buf;
-    buf = nullptr;
-    return value;
-}
-
-void SetNonPersonalizedAd(const napi_env &env, napi_value &jsonValue, napi_valuetype &jsonValueType, Json::Value &root)
-{
-    if (jsonValueType == napi_valuetype::napi_number) {
-        int32_t adOptionValue = GetInt32FromValue(env, jsonValue);
-        if (adOptionValue != ALLOW_ALL && adOptionValue != ALLOW_NON_PERSONALIZED) {
-            ADS_HILOGE(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Invalid %{public}s value", NON_PERSONALIZED_AD.c_str());
-        } else {
-            root[NON_PERSONALIZED_AD] = adOptionValue;
-        }
-    } else {
-        ADS_HILOGE(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Invalid %{public}s value", NON_PERSONALIZED_AD.c_str());
-    }
-}
-
-void SetAdContentClassification(const napi_env &env, napi_value &jsonValue, napi_valuetype &jsonValueType,
-    Json::Value &root)
-{
-    if (jsonValueType == napi_valuetype::napi_string) {
-        std::string adOptionValue = GetStringFromValueUtf8(env, jsonValue);
-        if (adOptionValue.compare(AD_CONTENT_CLASSIFICATION_W) != 0 &&
-            adOptionValue.compare(AD_CONTENT_CLASSIFICATION_PI) != 0 &&
-            adOptionValue.compare(AD_CONTENT_CLASSIFICATION_J) != 0 &&
-            adOptionValue.compare(AD_CONTENT_CLASSIFICATION_A) != 0 &&
-            adOptionValue.compare(AD_CONTENT_CLASSIFICATION_UNKOWN) != 0) {
-            ADS_HILOGE(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Invalid %{public}s value", AD_CONTENT_CLASSIFICATION.c_str());
-        } else {
-            root[AD_CONTENT_CLASSIFICATION] = adOptionValue;
-        }
-    } else {
-        ADS_HILOGE(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Invalid %{public}s value", AD_CONTENT_CLASSIFICATION.c_str());
-    }
-}
-
-void SetTagForChildProtection(const napi_env &env, napi_value &jsonValue, napi_valuetype &jsonValueType,
-    Json::Value &root)
-{
-    if (jsonValueType == napi_valuetype::napi_number) {
-        int32_t adOptionValue = GetInt32FromValue(env, jsonValue);
-        if (adOptionValue != TAG_FOR_CHILD_PROTECTION_UNSPECIFIED && adOptionValue != TAG_FOR_CHILD_PROTECTION_FALSE &&
-            adOptionValue != TAG_FOR_CHILD_PROTECTION_TRUE) {
-            ADS_HILOGE(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Invalid %{public}s value", TAG_FOR_CHILD_PROTECTION.c_str());
-        } else {
-            root[TAG_FOR_CHILD_PROTECTION] = adOptionValue;
-        }
-    } else {
-        ADS_HILOGE(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Invalid %{public}s value", TAG_FOR_CHILD_PROTECTION.c_str());
-    }
-}
-
-void SetDefaultAdOption(const napi_env &env, const std::string &adOptionKey, napi_value &jsonValue,
-    napi_valuetype &jsonValueType, Json::Value &root)
-{
-    if (adOptionKey.compare(TAG_FOR_CHILD_PROTECTION) == 0) {
-        SetTagForChildProtection(env, jsonValue, jsonValueType, root);
-    } else if (adOptionKey.compare(AD_CONTENT_CLASSIFICATION) == 0) {
-        SetAdContentClassification(env, jsonValue, jsonValueType, root);
-    } else if (adOptionKey.compare(NON_PERSONALIZED_AD) == 0) {
-        SetNonPersonalizedAd(env, jsonValue, jsonValueType, root);
-    }
-}
-
-void SetOtherAdOption(napi_env &env, napi_value &jsonValue, napi_valuetype &jsonValueType,
-    const std::string &adOptionKey, Json::Value &root)
-{
-    switch (jsonValueType) {
-        case napi_string: {
-            std::string adOptionValue = GetStringFromValueUtf8(env, jsonValue);
-            ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "adOptionName is : %{public}s adOptionValue is : %{public}s",
-                adOptionKey.c_str(), adOptionValue.c_str());
-            root[adOptionKey] = adOptionValue;
-            break;
-        }
-        case napi_boolean: {
-            bool adOptionValue = false;
-            if (napi_get_value_bool(env, jsonValue, &adOptionValue) == napi_ok) {
-                ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "adOptionName is : %{public}s value is : %{public}d",
-                    adOptionKey.c_str(), adOptionValue);
-                root[adOptionKey] = adOptionValue;
-            }
-            break;
-        }
-        case napi_number: {
-            int32_t adOptionValue = GetInt32FromValue(env, jsonValue);
-            ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "adOptionName is : %{public}s value is : %{public}d",
-                adOptionKey.c_str(), adOptionValue);
-            root[adOptionKey] = adOptionValue;
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-bool UnwrapParams(napi_env env, napi_value param, Json::Value &root)
-{
-    napi_valuetype jsonValueType = napi_undefined;
-    napi_value jsonNameList = nullptr;
-    uint32_t jsonCount = 0;
-    NAPI_CALL_BASE(env, napi_get_property_names(env, param, &jsonNameList), false);
-    NAPI_CALL_BASE(env, napi_get_array_length(env, jsonNameList, &jsonCount), false);
-    napi_value jsonName = nullptr;
-    napi_value jsonValue = nullptr;
-    for (uint32_t index = 0; index < jsonCount; index++) {
-        NAPI_CALL_BASE(env, napi_get_element(env, jsonNameList, index, &jsonName), false);
-        std::string adOptionKey = GetStringFromValueUtf8(env, jsonName);
-        ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "%{public}s called. Property name = %{public}s.", __func__,
-            adOptionKey.c_str());
-        NAPI_CALL_BASE(env, napi_get_named_property(env, param, adOptionKey.c_str(), &jsonValue), false);
-        NAPI_CALL_BASE(env, napi_typeof(env, jsonValue, &jsonValueType), false);
-        if (adOptionKey.compare(TAG_FOR_CHILD_PROTECTION) == 0 || adOptionKey.compare(AD_CONTENT_CLASSIFICATION) == 0 ||
-            adOptionKey.compare(NON_PERSONALIZED_AD) == 0) {
-            SetDefaultAdOption(env, adOptionKey, jsonValue, jsonValueType, root); // Set the default three options
-            continue;
-        }
-        SetOtherAdOption(env, jsonValue, jsonValueType, adOptionKey, root);
-    }
-    return true;
-}
-
-void InitAdConfStrJson(Json::Value &root)
-{
-    if (root[TAG_FOR_CHILD_PROTECTION].isNull() && root[AD_CONTENT_CLASSIFICATION].isNull() &&
-        root[NON_PERSONALIZED_AD].isNull()) {
-        ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Init successed.");
-    } else {
-        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Init failed.");
-    }
-}
-
-napi_value ParseParameters(const napi_env &env, const napi_value (&argv)[ADS_MAX_PARA], const size_t &argc,
-    napi_ref &callback, std::string &adConfigStrJson)
-{
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Begin.");
-    NAPI_ASSERT(env, argc >= ADS_MAX_PARA - 1, "Wrong number of arguments.");
-
-    napi_valuetype valuetype = napi_undefined;
-
-    NAPI_CALL(env, napi_typeof(env, argv[1], &valuetype));
-    NAPI_ASSERT(env, valuetype == napi_object, "Wrong argument type, argv[1] object expected.");
-
-    CheckAdOptions(env, argv[1], TAG_FOR_CHILD_PROTECTION);
-    CheckAdOptions(env, argv[1], AD_CONTENT_CLASSIFICATION);
-    CheckAdOptions(env, argv[1], NON_PERSONALIZED_AD);
-
-    Json::Value root; // AdOptions Json object
-    InitAdConfStrJson(root);
-
-    bool unWrapResult = UnwrapParams(env, argv[1], root);
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "unWrapResult is : %{public}d", unWrapResult);
-
-    std::string strJsonMsg = Json::FastWriter().write(root);
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "strJsonMsg is : %{public}s", strJsonMsg.c_str());
-    adConfigStrJson = strJsonMsg;
-
-    if (argc >= ADS_MAX_PARA) {
-        valuetype = napi_undefined;
-        NAPI_CALL(env, napi_typeof(env, argv[2], &valuetype));  // 2 params
-        NAPI_ASSERT(env, valuetype == napi_function, "Wrong argument type, function expected.");
-        NAPI_CALL(env, napi_create_reference(env, argv[2], NAPI_RETURN_ONE, &callback)); // 2 params
-    }
-
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "End.");
-    return NapiGetNull(env);
-}
-
-void PaddingCallbackInfo(const napi_env &env, AsyncCallbackInfoAdsInit *&asynccallbackinfo, const napi_ref &callback,
-    napi_value &promise)
-{
-    if (callback != nullptr) {
-        asynccallbackinfo->isCallback = true;
-        asynccallbackinfo->callback = callback;
-        g_isCallback = true;
-        g_callback = callback;
-    } else {
-        asynccallbackinfo->isCallback = false;
-        napi_deferred deferred = nullptr;
-        g_deferred = nullptr;
-        NAPI_CALL_RETURN_VOID(env, napi_create_promise(env, &deferred, &promise));
-        asynccallbackinfo->deferred = deferred;
-        g_deferred = deferred;
-    }
 }
 
 void GetCloudServiceProvider(CloudServiceProvider &cloudServiceProvider)
@@ -510,108 +114,7 @@ void GetCloudServiceProvider(CloudServiceProvider &cloudServiceProvider)
         cloudServiceProvider.uiAbilityName.c_str());
 }
 
-int32_t ConnectServiceExtensionAbility(std::string &adConfigStrJson, const sptr<IAdsInitCallback> &callback)
-{
-    sptr<IRemoteObject> callbackObj = nullptr;
-    if (callback != nullptr) {
-        callbackObj = callback->AsObject();
-    }
-
-    CloudServiceProvider cloudServiceProvider;
-    GetCloudServiceProvider(cloudServiceProvider);
-    std::string bundleName = cloudServiceProvider.bundleName;
-    std::string abilityName = cloudServiceProvider.abilityName;
-    AAFwk::Want want;
-    want.SetElementName(bundleName, abilityName);
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "%{public}s begin. bundleName=%{public}s, abilityName=%{public}s",
-        __func__, want.GetElement().GetBundleName().c_str(), want.GetElement().GetAbilityName().c_str());
-
-    sptr<AdsInitAbilityConnection> abilityConnection = new AdsInitAbilityConnection(adConfigStrJson, callbackObj);
-
-    int32_t ret = AAFwk::AbilityManagerClient::GetInstance()->ConnectAbility(want, abilityConnection, USER_ID);
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "ConnectAbility err code is : %{public}d", ret);
-    return ret;
-}
-
-void GetAdsExecuteCallBack(napi_env env, void *data)
-{
-    std::lock_guard<std::mutex> autoLock(getAdsLock_);
-    AsyncCallbackInfoAdsInit *asynccallbackinfo = (AsyncCallbackInfoAdsInit *)data;
-    std::string adConfigStrJson = asynccallbackinfo->adConfigStrJson;
-
-    int32_t result = ConnectServiceExtensionAbility(adConfigStrJson, asynccallbackinfo->adsCb);
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "result is %{public}d", result);
-}
-
-void GetAdsCompleteCallBack(napi_env env, napi_status status, void *data)
-{
-    AsyncCallbackInfoAdsInit *asynccallbackinfo = (AsyncCallbackInfoAdsInit *)data;
-    NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, asynccallbackinfo->asyncWork));
-    delete asynccallbackinfo;
-    asynccallbackinfo = nullptr;
-}
-
-AsyncCallbackInfoAdsInit *GetAsyncCallbackInfoAdsInit(napi_env &env, napi_callback_info &info, napi_ref &callback,
-    napi_value &promise)
-{
-    size_t argc = ADS_MAX_PARA;
-    napi_value argv[ADS_MAX_PARA] = {0};
-    napi_value thisVar = nullptr;
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &thisVar, NULL));
-
-    std::string adConfigStrJson;
-    if (ParseParameters(env, argv, argc, callback, adConfigStrJson) == nullptr) {
-        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "GetAsyncCallbackInfoAdsInit ParseParameters return null !");
-        return nullptr;
-    }
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "adConfigStrJson is : %{public}s", adConfigStrJson.c_str());
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "GetAdsExGetAsyncCallbackInfoAdsInit ParseParameters done");
-    AsyncCallbackInfoAdsInit *asynccallbackinfo = new (std::nothrow) AsyncCallbackInfoAdsInit{
-        .env = env,
-        .asyncWork = nullptr
-    };
-    if (!asynccallbackinfo) {
-        return nullptr;
-    }
-    asynccallbackinfo->adConfigStrJson = adConfigStrJson;
-    PaddingCallbackInfo(env, asynccallbackinfo, callback, promise);
-    asynccallbackinfo->adsCb = new (std::nothrow) AdsInitCallback(&tsfn);
-    return asynccallbackinfo;
-}
-
-napi_value Advertising::Init(napi_env env, napi_callback_info info)
-{
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Begin.");
-    napi_ref callback = nullptr;
-    napi_value promise = nullptr;
-    AsyncCallbackInfoAdsInit *asynccallbackinfo = GetAsyncCallbackInfoAdsInit(env, info, callback, promise);
-    if (asynccallbackinfo == nullptr) {
-        return ParaError(env, callback);
-    }
-
-    napi_status napiStatus;
-    napi_value workName;
-    napi_create_string_utf8(env, "threadsafeCallback", NAPI_AUTO_LENGTH, &workName);
-    napiStatus = napi_create_threadsafe_function(env, NULL, NULL, workName, 0, 1, NULL, NULL, NULL, DoCallback, &tsfn);
-    NAPI_ASSERT(env, napiStatus == napi_ok, "napi create threadsafe function failed");
-
-    napi_value resourceName = nullptr;
-    NAPI_CALL(env, napi_create_string_utf8(env, "init", NAPI_AUTO_LENGTH, &resourceName));
-    napi_async_execute_callback getAdsExecuteCallBack = GetAdsExecuteCallBack;
-    napi_async_complete_callback getAdsCompleteCallBack = GetAdsCompleteCallBack;
-    NAPI_CALL(env, napi_create_async_work(env, nullptr, resourceName, getAdsExecuteCallBack, getAdsCompleteCallBack,
-        (void *)asynccallbackinfo, &asynccallbackinfo->asyncWork));
-    NAPI_CALL(env, napi_queue_async_work(env, asynccallbackinfo->asyncWork));
-
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "End.");
-    if (asynccallbackinfo->isCallback) {
-        return NapiGetNull(env);
-    } else {
-        return promise;
-    }
-}
-
-napi_value GetLongStringProperty(const napi_env &env, const napi_value &value, const std::string &key,
+napi_value GetLongStringProperty(const napi_env &env, napi_value &value, const std::string &key,
     std::string &stringValue)
 {
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "GetLongStringProperty enter");
@@ -639,7 +142,7 @@ napi_value GetLongStringProperty(const napi_env &env, const napi_value &value, c
     return NapiGetNull(env);
 }
 
-napi_value GetShortStringProperty(const napi_env &env, const napi_value &value, const std::string &key,
+napi_value GetShortStringProperty(const napi_env &env, napi_value &value, const std::string &key,
     std::string &stringValue)
 {
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "GetShortStringProperty enter");
@@ -663,7 +166,7 @@ napi_value GetShortStringProperty(const napi_env &env, const napi_value &value, 
     return NapiGetNull(env);
 }
 
-napi_value GetBoolProperty(const napi_env &env, const napi_value &value, const std::string &key, bool &boolValue)
+napi_value GetBoolProperty(const napi_env &env, napi_value &value, const std::string &key, bool &boolValue)
 {
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "GetBoolProperty enter");
     napi_valuetype valuetype;
@@ -683,7 +186,7 @@ napi_value GetBoolProperty(const napi_env &env, const napi_value &value, const s
     return NapiGetNull(env);
 }
 
-napi_value GetInt32Property(const napi_env &env, const napi_value &value, const std::string &key, uint32_t &intValue)
+napi_value GetInt32Property(const napi_env &env, napi_value &value, const std::string &key, uint32_t &intValue)
 {
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "GetInt32Property enter");
     napi_valuetype valuetype;
@@ -702,7 +205,7 @@ napi_value GetInt32Property(const napi_env &env, const napi_value &value, const 
     return NapiGetNull(env);
 }
 
-napi_value GetStringArrayProperty(const napi_env &env, const napi_value &value, const std::string &key,
+napi_value GetStringArrayProperty(const napi_env &env, napi_value &value, const std::string &key,
     std::vector<std::string> &arrayValue)
 {
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "GetStringArrayProperty enter");
@@ -746,7 +249,7 @@ napi_value GetStringArrayProperty(const napi_env &env, const napi_value &value, 
     return NapiGetNull(env);
 }
 
-napi_value GetWantProperty(const napi_env &env, const napi_value &value, const std::string &key,
+napi_value GetWantProperty(const napi_env &env, napi_value &value, const std::string &key,
     AAFwk::WantParams &wantParams)
 {
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "GetWantProperty enter");
@@ -817,66 +320,78 @@ napi_value ParseObjectFromJs(napi_env env, napi_value argv, Json::Value &root)
     return NapiGetNull(env);
 }
 
-napi_value ParseAdvertismentByAd(const napi_env &env, const napi_value (&argv)[SHOW_AD_PARA],
-    Advertisment &advertisment)
+napi_value RemoveAlreadyParsedProperties(const napi_env &env, napi_value &argv,
+    const std::vector<std::string> &keyArray)
 {
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "ParseAdvertismentByAd enter");
-    napi_valuetype valuetype;
-    // argv[1]
-    NAPI_CALL(env, napi_typeof(env, argv[1], &valuetype));
-    if (valuetype != napi_object) {
-        ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Wrong argument type. argv[1] Object expected.");
-        return nullptr;
-    }
-    if (GetInt32Property(env, argv[1], AD_RESPONSE_AD_TYPE, advertisment.adType) == nullptr) {
-        return nullptr;
-    }
-    if (GetShortStringProperty(env, argv[1], AD_RESPONSE_CONTENT_ID, advertisment.contentId) == nullptr) {
-        return nullptr;
-    }
-    if (GetStringArrayProperty(env, argv[1], AD_RESPONSE_KEYWORDS, advertisment.adCloseKeywords) == nullptr) {
-        return nullptr;
-    }
-    if (GetInt32Property(env, argv[1], AD_RESPONSE_CREATIVE_TYPE, advertisment.creativeType) == nullptr) {
-        return nullptr;
-    }
-    if (GetLongStringProperty(env, argv[1], AD_RESPONSE_CONTENT_DATA, advertisment.adContentData) == nullptr) {
-        return nullptr;
-    }
-    if (GetShortStringProperty(env, argv[1], AD_RESPONSE_UNIQUE_ID, advertisment.uniqueId) == nullptr) {
-        return nullptr;
-    }
-    if (GetBoolProperty(env, argv[1], AD_RESPONSE_REWARDED, advertisment.rewarded) == nullptr) {
-        return nullptr;
-    }
-    if (GetBoolProperty(env, argv[1], AD_RESPONSE_SHOWN, advertisment.shown) == nullptr) {
-        return nullptr;
-    }
-    if (GetBoolProperty(env, argv[1], AD_RESPONSE_CLICKED, advertisment.clicked) == nullptr) {
-        return nullptr;
+    for (auto key : keyArray) {
+        bool hasProperty = false;
+        bool deleteresult = false;
+        NAPI_CALL(env, napi_has_named_property(env, argv, key.c_str(), &hasProperty));
+        if (hasProperty) {
+            napi_value propertKey = nullptr;
+            napi_create_string_utf8(env, key.c_str(), NAPI_AUTO_LENGTH, &propertKey);
+            NAPI_CALL(env, napi_delete_property(env, argv, propertKey, &deleteresult));
+            if (!deleteresult) {
+                ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "delete Property failed");
+                return nullptr;
+            }
+        }
     }
     return NapiGetNull(env);
 }
 
-void AssembShowAdParas(Want &want, const Advertisment &advertisment)
+napi_value ParseAdvertismentByAd(napi_env &env, napi_value &argv, Advertisment &advertisment, Json::Value &root)
+{
+    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "ParseAdvertismentByAd enter");
+    napi_valuetype valuetype;
+    // argv[1]
+    NAPI_CALL(env, napi_typeof(env, argv, &valuetype));
+    if (valuetype != napi_object) {
+        ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Wrong argument type. argv[1] Object expected.");
+        return nullptr;
+    }
+    // peoperty size
+    napi_value valueList = nullptr;
+    uint32_t valueCount = 0;
+    NAPI_CALL(env, napi_get_property_names(env, argv, &valueList));
+    NAPI_CALL(env, napi_get_array_length(env, valueList, &valueCount));
+    if (GetInt32Property(env, argv, AD_RESPONSE_AD_TYPE, advertisment.adType) == nullptr) {
+        return nullptr;
+    }
+    if (GetShortStringProperty(env, argv, AD_RESPONSE_UNIQUE_ID, advertisment.uniqueId) == nullptr) {
+        return nullptr;
+    }
+    if (GetBoolProperty(env, argv, AD_RESPONSE_REWARDED, advertisment.rewarded) == nullptr) {
+        return nullptr;
+    }
+    if (GetBoolProperty(env, argv, AD_RESPONSE_SHOWN, advertisment.shown) == nullptr) {
+        return nullptr;
+    }
+    if (GetBoolProperty(env, argv, AD_RESPONSE_CLICKED, advertisment.clicked) == nullptr) {
+        return nullptr;
+    }
+    if (static_cast<int>(valueCount) > AD_STANDARD_SIZE) {
+        ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "advertisment has extra value");
+        std::vector<std::string> keyArray{ AD_RESPONSE_AD_TYPE, AD_RESPONSE_REWARD_CONFIG, AD_RESPONSE_UNIQUE_ID,
+            AD_RESPONSE_REWARDED, AD_RESPONSE_SHOWN, AD_RESPONSE_CLICKED };
+        if (RemoveAlreadyParsedProperties(env, argv, keyArray) == nullptr) {
+            return nullptr;
+        }
+        ParseObjectFromJs(env, argv, root);
+    }
+    return NapiGetNull(env);
+}
+
+void AssembShowAdParas(Want &want, const Advertisment &advertisment, Json::Value &root)
 {
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "AssembShowAdParas enter");
-    Json::Value advertismentRoot;
-    advertismentRoot[AD_RESPONSE_CONTENT_DATA] = advertisment.adContentData;
-    advertismentRoot[AD_RESPONSE_AD_TYPE] = advertisment.adType;
-    advertismentRoot[AD_RESPONSE_CONTENT_ID] = advertisment.contentId;
-    Json::Value keywordsArray;
-    for (int i = 0; i < advertisment.adCloseKeywords.size(); i++) {
-        keywordsArray[i] = advertisment.adCloseKeywords.at(i);
-    }
-    advertismentRoot[AD_RESPONSE_KEYWORDS] = keywordsArray;
-    advertismentRoot[AD_RESPONSE_CREATIVE_TYPE] = advertisment.creativeType;
-    advertismentRoot[AD_RESPONSE_REWARD_CONFIG] = {{}, {}};
-    advertismentRoot[AD_RESPONSE_UNIQUE_ID] = advertisment.uniqueId;
-    advertismentRoot[AD_RESPONSE_REWARDED] = advertisment.rewarded;
-    advertismentRoot[AD_RESPONSE_SHOWN] = advertisment.shown;
-    advertismentRoot[AD_RESPONSE_CLICKED] = advertisment.clicked;
-    std::string advertismentString = Json::FastWriter().write(advertismentRoot);
+    root[AD_RESPONSE_AD_TYPE] = advertisment.adType;
+    root[AD_RESPONSE_REWARD_CONFIG] = {{}, {}};
+    root[AD_RESPONSE_UNIQUE_ID] = advertisment.uniqueId;
+    root[AD_RESPONSE_REWARDED] = advertisment.rewarded;
+    root[AD_RESPONSE_SHOWN] = advertisment.shown;
+    root[AD_RESPONSE_CLICKED] = advertisment.clicked;
+    std::string advertismentString = Json::FastWriter().write(root);
     want.SetParam(AD_ADVERTISMENT, advertismentString);
 }
 
@@ -890,7 +405,7 @@ napi_value Advertising::ShowAd(napi_env env, napi_callback_info info)
         return NapiGetNull(env);
     }
     Json::Value adDisplayOptionsRoot;
-    if (ParseObjectFromJs(env, argv[2], adDisplayOptionsRoot) == nullptr) {  // 2 params
+    if (ParseObjectFromJs(env, argv[1], adDisplayOptionsRoot) == nullptr) { // 2 params
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "ParseDisplayOptionsByShowAd failed");
         return NapiGetNull(env);
     }
@@ -898,18 +413,20 @@ napi_value Advertising::ShowAd(napi_env env, napi_callback_info info)
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "enter show ad display is %{public}s", displayOptionsString.c_str());
     Want want;
     Advertisment advertisment;
-    if (ParseAdvertismentByAd(env, argv, advertisment) == nullptr) {
+    Json::Value adRoot;
+    if (ParseAdvertismentByAd(env, argv[0], advertisment, adRoot) == nullptr) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "ParseAdvertismentByAd failed");
         return NapiGetNull(env);
     }
     // assemble
-    AssembShowAdParas(want, advertisment);
+    AssembShowAdParas(want, advertisment, adRoot);
     CloudServiceProvider cloudServiceProvider;
     GetCloudServiceProvider(cloudServiceProvider);
     std::string bundleName = cloudServiceProvider.bundleName;
     std::string abilityName = cloudServiceProvider.uiAbilityName;
     want.SetElementName(bundleName, abilityName);
     want.SetParam(AD_DISPLAY_OPTIONS, displayOptionsString);
+    want.SetParam("ability.params.backToOtherMissionStack", true);
     ErrCode ret = AAFwk::AbilityManagerClient::GetInstance()->StartAbility(want);
     if (ret != ERR_SEND_OK) {
         ADS_HILOGE(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Fail to show ad, err:%{public}d", ret);
@@ -1023,7 +540,6 @@ napi_value Advertising::LoadAd(napi_env env, napi_callback_info info)
 napi_value Advertising::AdvertisingInit(napi_env env, napi_value exports)
 {
     napi_property_descriptor descriptor[] = {
-        DECLARE_NAPI_FUNCTION("init", Init),
         DECLARE_NAPI_FUNCTION("showAd", ShowAd),
     };
     NAPI_CALL(env,

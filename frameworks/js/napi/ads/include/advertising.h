@@ -42,11 +42,7 @@ static const int8_t ERR_START_ABILITY_FAILED = 1;
 
 struct Advertisment {
     uint32_t adType;
-    std::string contentId;
-    std::vector<std::string> adCloseKeywords;
-    uint32_t creativeType;
     std::map<std::string, std::string> rewardVerifyConfig;
-    std::string adContentData;
     std::string uniqueId;
     bool rewarded;
     bool shown;
@@ -109,8 +105,6 @@ public:
     static napi_value AdvertisingInit(napi_env env, napi_value exports);
 
 private:
-    static napi_value Init(napi_env env, napi_callback_info info);
-
     static napi_value ShowAd(napi_env env, napi_callback_info info);
 
     static napi_value LoadAd(napi_env env, napi_callback_info info);

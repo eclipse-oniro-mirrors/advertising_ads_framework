@@ -40,20 +40,8 @@ inline void ParseSingleAd(std::vector<AAFwk::Want> &ads, Json::Value &root)
 {
     AAFwk::Want want;
     want.SetParam(AD_RESPONSE_AD_TYPE, root[AD_RESPONSE_AD_TYPE].asInt());
-    want.SetParam(AD_RESPONSE_CONTENT_ID, root[AD_RESPONSE_CONTENT_ID].asString());
-    if (root[AD_RESPONSE_KEYWORDS] == Json::arrayValue) {
-        int size = root[AD_RESPONSE_KEYWORDS].size();
-        std::vector<std::string> keywords;
-        for (int i = 0; i < size; i++) {
-            keywords.emplace_back(root[AD_RESPONSE_KEYWORDS][i].asString());
-        }
-        want.SetParam(AD_RESPONSE_KEYWORDS, keywords);
-    }
-    want.SetParam(AD_RESPONSE_CREATIVE_TYPE, root[AD_RESPONSE_CREATIVE_TYPE].asInt());
     std::string rewardConfig = Json::FastWriter().write(root[AD_RESPONSE_REWARD_CONFIG]);
     want.SetParam(AD_RESPONSE_REWARD_CONFIG, rewardConfig);
-    std::string adContentData = Json::FastWriter().write(root[AD_RESPONSE_CONTENT_DATA]);
-    want.SetParam(AD_RESPONSE_CONTENT_DATA, adContentData);
     want.SetParam(AD_RESPONSE_UNIQUE_ID, root[AD_RESPONSE_UNIQUE_ID].asString());
     want.SetParam(AD_RESPONSE_REWARDED, root[AD_RESPONSE_REWARDED].asBool());
     want.SetParam(AD_RESPONSE_SHOWN, root[AD_RESPONSE_SHOWN].asBool());

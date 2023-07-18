@@ -12,50 +12,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "native_engine/native_engine.h"
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
 /*
- * The modules that need to be developed need to reference the two variables. 
+ * The modules that need to be developed need to reference the two variables.
  * The xx.js file is compiled into xx_abc.o, which contains the two variables.
- * The variable naming rule is _binary_{MiddleName}_start. 
- * In this example, MiddleName is defined as xx_abc, 
+ * The variable naming rule is _binary_{MiddleName}_start.
+ * In this example, MiddleName is defined as xx_abc,
  * which can be customized but must match the target name of gen_js_obj in BUILD.gn.
  */
-extern const char _binary_advertising_component_abc_start[];
-extern const char _binary_advertising_component_abc_end[];
+extern const char _binary_ad_component_abc_start[];
+extern const char _binary_ad_component_abc_end[];
  
 // function name: NAPI_{ModuleName}_GetABCCode
-extern "C" __attribute__((visibility("default"))) void NAPI_cloud_advertising_component_GetABCCode(
+extern "C" __attribute__((visibility("default"))) void NAPI_cloud_ad_component_GetABCCode(
     const char** buf, int* bufLen)
 {
     if (buf != nullptr) {
-        *buf = _binary_advertising_component_abc_start;
+        *buf = _binary_ad_component_abc_start;
     }
  
     if (bufLen != nullptr) {
-        *bufLen = _binary_advertising_component_abc_end - _binary_advertising_component_abc_start;
+        *bufLen = _binary_ad_component_abc_end - _binary_ad_component_abc_start;
     }
 }
 
 /*
  * Module define
  */
-static napi_module advertisingComponentModule = {
+static napi_module adComponentModule = {
     .nm_version = 1,
     .nm_flags = 0,
     .nm_filename = nullptr,
-    .nm_modname = "cloud.advertising_component",
+    .nm_modname = "cloud.ad_component",
     .nm_priv = ((void*)0),
     .reserved = { 0 },
 };
 /*
  * Module register function
  */
-extern "C" __attribute__((constructor)) void AdvertisingComponentRegisterModule(void)
+extern "C" __attribute__((constructor)) void AdComponentRegisterModule(void)
 {
-    napi_module_register(&advertisingComponentModule);
+    napi_module_register(&adComponentModule);
 }

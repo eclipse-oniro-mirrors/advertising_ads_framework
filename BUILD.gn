@@ -18,7 +18,7 @@ group("advertising_native_packages") {
       "etc/init:advertisingservice.cfg",
       "interfaces/kits/js:advertising",
       "frameworks/js/napi/ads:advertising",
-      "frameworks/js/napi/advertising_component:advertising_component",
+      "frameworks/js/napi/ad_component:ad_component",
       "sa_profile:cloud_advertising_sa_profiles",
       "services:advertising_service",
       "services:ad_service_config_json",

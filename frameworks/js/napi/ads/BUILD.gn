@@ -55,10 +55,6 @@ ohos_shared_library("advertising") {
     "src/ad_init.cpp",
     "src/ad_load_napi_common.cpp",
     "src/advertising.cpp",
-    "src/ad_init_send_request_proxy.cpp",
-    "src/ad_init_common.cpp",
-    "src/ad_init_callback_stub.cpp",
-    "src/ad_init_ability_connect.cpp",
   ]
 
   deps = [

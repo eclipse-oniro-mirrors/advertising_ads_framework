@@ -15,24 +15,24 @@ import("//build/ohos.gni")
 import("//foundation/arkui/ace_engine/ace_config.gni")
 import("//arkcompiler/ets_frontend/es2panda/es2abc_config.gni")
 
-es2abc_gen_abc("gen_advertising_component_abc") {
-  src_js = rebase_path("advertising_component.js")
-  dst_file = rebase_path(target_out_dir + "/advertising_component.abc")
-  in_puts = [ "advertising_component.js" ]
-  out_puts = [ target_out_dir + "/advertising_component.abc" ]
+es2abc_gen_abc("gen_ad_component_abc") {
+  src_js = rebase_path("ad_component.js")
+  dst_file = rebase_path(target_out_dir + "/ad_component.abc")
+  in_puts = [ "ad_component.js" ]
+  out_puts = [ target_out_dir + "/ad_component.abc" ]
   extra_args = [ "--module" ]  
 }
 
-gen_js_obj("advertising_component_abc") {
-  input = get_label_info(":gen_advertising_component_abc", "target_out_dir") + "/advertising_component.abc"
-  output = target_out_dir + "/advertising_component_abc.o"
-  dep = ":gen_advertising_component_abc"
+gen_js_obj("ad_component_abc") {
+  input = get_label_info(":gen_ad_component_abc", "target_out_dir") + "/ad_component.abc"
+  output = target_out_dir + "/ad_component_abc.o"
+  dep = ":gen_ad_component_abc"
 }
 
-ohos_shared_library("advertising_component") {
-  sources = [ "advertising_component.cpp" ]
+ohos_shared_library("ad_component") {
+  sources = [ "ad_component.cpp" ]
 
-  deps = [ ":advertising_component_abc" ]
+  deps = [ ":ad_component_abc" ]
 
   external_deps = [ "napi:ace_napi" ]
 
