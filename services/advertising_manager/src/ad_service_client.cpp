@@ -132,7 +132,7 @@ void AdvertisingServiceClient::OnRemoteAdSADied(const wptr<IRemoteObject> &remot
 }
 
 ErrCode AdvertisingServiceClient::LoadAd(const std::string &request, const std::string &adOptions,
-    const sptr<IAdLoadCallback> &callback)
+    const sptr<IAdLoadCallback> &callback, int32_t loadAdType)
 {
     if (callback == nullptr) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_CLIENT, "callback is nullptr");
@@ -146,7 +146,7 @@ ErrCode AdvertisingServiceClient::LoadAd(const std::string &request, const std::
         ADS_HILOGE(OHOS::Cloud::ADS_MODULE_CLIENT, "adServiceProxy is nullptr");
         return ERR_AD_COMMON_AD_PROXY_NULL_ERROR;
     }
-    return adServiceProxy->LoadAd(request, adOptions, callback->AsObject(), 0);
+    return adServiceProxy->LoadAd(request, adOptions, callback->AsObject(), 0, loadAdType);
 }
 
 void AdvertisingServiceClient::LoadAdSASucess(const sptr<IRemoteObject> &remoteObject)

@@ -26,6 +26,9 @@ static const int32_t ADVERTISING_ID = 6104;
 // request ad
 static const int32_t SEND_LOAD_AD_REQUEST_CODE = 1;
 
+// request multi solts ad
+static const int32_t SEND_LOAD_MULTI_SOLTS_AD_REQUEST_CODE = 2;
+
 // The connection timeout is 3s.
 static const int8_t CONNECT_TIME_OUT = 3;
 

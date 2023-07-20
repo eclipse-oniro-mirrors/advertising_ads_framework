@@ -28,7 +28,7 @@ AdvertisingProxy::AdvertisingProxy(const sptr<IRemoteObject> &impl) : IRemotePro
 AdvertisingProxy::~AdvertisingProxy() {}
 
 ErrCode AdvertisingProxy::LoadAd(const std::string &request, const std::string &options,
-    const sptr<IRemoteObject> &callback, uint32_t callingUid)
+    const sptr<IRemoteObject> &callback, uint32_t callingUid, int32_t loadAdType)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -45,6 +45,10 @@ ErrCode AdvertisingProxy::LoadAd(const std::string &request, const std::string &
     }
     if (!data.WriteRemoteObject(callback)) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_CLIENT, "failed to write remote object for callback");
+        return ERR_AD_COMMON_AD_WRITE_PARCEL_ERROR;
+    }
+    if (!data.WriteInt32(loadAdType)) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_CLIENT, "failed to write ad load type");
         return ERR_AD_COMMON_AD_WRITE_PARCEL_ERROR;
     }
     MessageParcel reply;

@@ -29,10 +29,12 @@ public:
     DECLARE_INTERFACE_DESCRIPTOR(u"ohos.cloud.Ads.IAdLoadCallback");
 
     virtual void OnAdLoadSuccess(const std::vector<AAFwk::Want> &result) = 0;
-    virtual void OnAdLoadFailed(int32_t resultCode, const std::string &resultMsg) = 0;
+    virtual void OnAdLoadMultiSlotsSuccess(const std::map<std::string, std::vector<AAFwk::Want>> &result) = 0;
+    virtual void OnAdLoadFailure(int32_t resultCode, const std::string &resultMsg) = 0;
 
     enum class Message {
-        AD_LOAD_SUCCESS = 200,
+        AD_LOAD = 1,
+        MULTI_AD_LOAD = 2,
         AD_LOAD_PARAMS_ERROR = 401,
         AD_LOAD_INNER_ERROR = 100001,
         AD_LOAD_FAIL = 100003,

@@ -60,12 +60,13 @@ ErrCode AdvertisingStub::ProcessLoadAd(uint32_t code, MessageParcel &data, Messa
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_SERVICE, "ProcessLoadAd adRequest is: %{public}s; adOptions is %{public}s",
         adRequest.c_str(), adOptions.c_str());
     sptr<IRemoteObject> callback = data.ReadRemoteObject();
+    int32_t loadType = data.ReadInt32();
     ErrCode result = ERR_OK;
     if ((adRequest.empty()) || (callback == nullptr)) {
         ADS_HILOGE(OHOS::Cloud::ADS_MODULE_SERVICE, "invalid parameters");
         result = ERR_AD_COMMON_AD_SERVICE_INVALID_PARAMETER_ERROR;
     } else {
-        result = AdvertisingService::GetInstance()->LoadAd(adRequest, adOptions, callback, callingUid);
+        result = AdvertisingService::GetInstance()->LoadAd(adRequest, adOptions, callback, callingUid, loadType);
     }
     if (!reply.WriteInt32(result)) {
         ADS_HILOGE(OHOS::Cloud::ADS_MODULE_SERVICE, "failed to write reply");

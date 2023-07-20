@@ -27,7 +27,8 @@ public:
     ~AdLoadCallbackProxy();
 
     void OnAdLoadSuccess(const std::vector<AAFwk::Want> &result) override;
-    void OnAdLoadFailed(int32_t resultCode, const std::string &resultMsg) override;
+    void OnAdLoadMultiSlotsSuccess(const std::map<std::string, std::vector<AAFwk::Want>> &result) override;
+    void OnAdLoadFailure(int32_t resultCode, const std::string &resultMsg) override;
 
 private:
     ErrCode SendRequest(IAdLoadCallback::Message code, MessageParcel &data, MessageParcel &reply);

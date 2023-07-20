@@ -35,7 +35,7 @@ using namespace OHOS::Cloud;
 class AdLoadListenerCallback;
 
 struct AdJSCallback {
-    napi_ref onAdLoadFailed = nullptr;
+    napi_ref onAdLoadFailure = nullptr;
     napi_ref onAdLoadSuccess = nullptr;
 };
 
@@ -44,6 +44,7 @@ struct AdCallbackParam {
     int32_t errCode;
     std::string errMsg;
     std::vector<AAFwk::Want> ads;
+    std::map<std::string, std::vector<AAFwk::Want>> multiAds;
     AdJSCallback callback;
 };
 
@@ -52,15 +53,15 @@ public:
     explicit AdLoadListenerCallback(napi_env env, AdJSCallback callback);
     ~AdLoadListenerCallback();
     void OnAdLoadSuccess(const std::vector<AAFwk::Want> &result) override;
-    void OnAdLoadFailed(int32_t resultCode, const std::string &resultMsg) override;
+    void OnAdLoadMultiSlotsSuccess(const std::map<std::string, std::vector<AAFwk::Want>> &result) override;
+    void OnAdLoadFailure(int32_t resultCode, const std::string &resultMsg) override;
 
 private:
     napi_env env_ = nullptr;
     AdJSCallback callback_;
     bool InitAdLoadCallbackWorkEnv(napi_env env, uv_loop_s **loop, uv_work_t **work, AdCallbackParam **param);
 };
-
-}  // namespace AdsNapi
-}  // namespace CloudNapi
-}  // namespace OHOS
-#endif  // OHOS_CLOUD_NAPI_ADVERTISING_COMMON_H
+} // namespace AdsNapi
+} // namespace CloudNapi
+} // namespace OHOS
+#endif // OHOS_CLOUD_NAPI_ADVERTISING_COMMON_H

@@ -30,7 +30,7 @@ public:
     ~AdvertisingProxy() override;
 
     ErrCode LoadAd(const std::string &request, const std::string &options, const sptr<IRemoteObject> &callback,
-        uint32_t callingUid) override;
+        uint32_t callingUid, int32_t loadAdType) override;
 
 private:
     ErrCode SendRequest(AdsInterfaceCode code, MessageParcel &data, MessageParcel &reply);

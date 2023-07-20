@@ -59,7 +59,7 @@ void AdRequestConnection::OnAbilityConnectDone(const AppExecFwk::ElementName &el
         ADS_HILOGE(OHOS::Cloud::ADS_MODULE_SERVICE, "ad load get send request proxy failed.");
         return;
     }
-    proxy_->SendAdLoadRequest(callingUid_, adRequest_, adoptions_, adCollection_, callback_);
+    proxy_->SendAdLoadRequest(callingUid_, data_, callback_, loadAdType_);
 }
 
 void AdRequestConnection::OnAbilityDisconnectDone(const AppExecFwk::ElementName &element, int resultCode)
@@ -131,7 +131,7 @@ void AdvertisingService::GetCloudServiceProvider(AdServiceElementName &cloudServ
 }
 
 ErrCode AdvertisingService::LoadAd(const std::string &request, const std::string &options,
-    const sptr<IRemoteObject> &callback, uint32_t callingUid)
+    const sptr<IRemoteObject> &callback, uint32_t callingUid, int32_t loadAdType)
 {
     if (adServiceElementName_.bundleName.empty() || adServiceElementName_.extensionName.empty()) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_SERVICE, "adServiceElementName is null, read from config");
@@ -143,10 +143,11 @@ ErrCode AdvertisingService::LoadAd(const std::string &request, const std::string
         return ERR_AD_COMMON_AD_SA_REMOTE_OBJECT_ERROR;
     }
     std::string collection = "{}";
-    if (ConnectAdKit(callingUid, request, options, collection, castedCallback)) {
+    auto *data = new (std::nothrow) AdRequestData(request, options, collection);
+    if (ConnectAdKit(callingUid, data, castedCallback, loadAdType)) {
         return ERR_OK;
     } else {
-        castedCallback->OnAdLoadFailed(ERR_AD_COMMON_AD_CONNECT_KIT_ERROR, "connect ad kit fail");
+        castedCallback->OnAdLoadFailure(ERR_AD_COMMON_AD_CONNECT_KIT_ERROR, "connect ad kit fail");
         return ERR_AD_COMMON_AD_CONNECT_KIT_ERROR;
     }
     return ERR_OK;
@@ -177,8 +178,8 @@ void AdvertisingService::OnStop()
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_SERVICE, "AdvertisingService stop success");
 }
 
-bool AdvertisingService::ConnectAdKit(uint32_t callingUid, const std::string &adRequest, const std::string &adoptions,
-    const std::string &adCollection, const sptr<IAdLoadCallback> &callback)
+bool AdvertisingService::ConnectAdKit(uint32_t callingUid, const sptr<AdRequestData> &data,
+    const sptr<IAdLoadCallback> &callback, int32_t loadAdType)
 {
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_SERVICE,
         "Begin connect extension ability, bundleName is %{public}s, extension name is %{public}s, userId is %{public}d",
@@ -187,7 +188,7 @@ bool AdvertisingService::ConnectAdKit(uint32_t callingUid, const std::string &ad
     OHOS::AAFwk::Want connectionWant;
     connectionWant.SetElementName(adServiceElementName_.bundleName, adServiceElementName_.extensionName);
     sptr<AdRequestConnection> serviceConnection =
-        new (std::nothrow) AdRequestConnection(callingUid, adRequest, adoptions, adCollection, callback);
+        new (std::nothrow) AdRequestConnection(callingUid, data, callback, loadAdType);
     ErrCode errCode = AAFwk::AbilityManagerClient::GetInstance()->ConnectAbility(connectionWant, serviceConnection,
         adServiceElementName_.userId);
     if (errCode != ERR_OK) {

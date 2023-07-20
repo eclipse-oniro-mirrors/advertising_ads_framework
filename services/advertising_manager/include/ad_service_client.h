@@ -42,7 +42,7 @@ public:
     DISALLOW_COPY_AND_MOVE(AdvertisingServiceClient);
     static sptr<AdvertisingServiceClient> GetInstance();
     ErrCode LoadAd(const std::string &request, const std::string &adOptions,
-        const sptr<IAdLoadCallback> &callback);
+        const sptr<IAdLoadCallback> &callback, int32_t loadAdType);
     void OnRemoteAdSADied(const wptr<IRemoteObject> &object);
     void LoadAdSAFail();
     void LoadAdSASucess(const sptr<IRemoteObject> &remoteObject);

@@ -27,7 +27,7 @@ namespace Cloud {
 class IAdvertisingService : public IRemoteBroker {
 public:
     virtual ErrCode LoadAd(const std::string &request, const std::string &options, const sptr<IRemoteObject> &callback,
-        uint32_t callingUid) = 0;
+        uint32_t callingUid, int32_t loadAdType) = 0;
 
     DECLARE_INTERFACE_DESCRIPTOR(u"ohos.cloud.advertising.IAdvertisingService");
 };

@@ -92,6 +92,15 @@ struct AdvertisingRequestContext {
     sptr<IAdLoadCallback> adLoadCallback = nullptr;
 };
 
+struct MultiSlotsRequestContext {
+    napi_env env = nullptr;
+    napi_async_work asyncWork;
+    int8_t errorCode = NO_ERROR;
+    std::string mulitRequestString;
+    std::string mulitOptionString;
+    sptr<IAdLoadCallback> mulitAdLoadCallback = nullptr;
+};
+
 struct CloudServiceProvider {
     std::string bundleName;
     std::string abilityName;
@@ -109,6 +118,8 @@ private:
 
     static napi_value LoadAd(napi_env env, napi_callback_info info);
 
+    static napi_value LoadAdWithMultiSlots(napi_env env, napi_callback_info info);
+
     static napi_value JsConstructor(napi_env env, napi_callback_info cbinfo);
 
     static thread_local napi_ref adRef_;
@@ -122,7 +133,7 @@ public:
 private:
     void loadAd();
 };
-}  // namespace AdsNapi
-}  // namespace CloudNapi
-}  // namespace OHOS
-#endif  // OHOS_CLOUD_NAPI_ADVERTISING_H
+} // namespace AdsNapi
+} // namespace CloudNapi
+} // namespace OHOS
+#endif // OHOS_CLOUD_NAPI_ADVERTISING_H

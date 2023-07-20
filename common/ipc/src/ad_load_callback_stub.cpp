@@ -15,6 +15,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "want.h"
 #include "json/json.h"
@@ -26,6 +27,8 @@
 
 namespace OHOS {
 namespace Cloud {
+static const int32_t LOAD_AD_SUCCESS = 200;
+
 AdLoadCallbackStub::AdLoadCallbackStub() {}
 AdLoadCallbackStub::~AdLoadCallbackStub() {}
 
@@ -36,9 +39,8 @@ inline std::string Str16ToStr8(const std::u16string &str)
     return result;
 }
 
-inline void ParseSingleAd(std::vector<AAFwk::Want> &ads, Json::Value &root)
+inline void CommonParse(AAFwk::Want &want, Json::Value &root)
 {
-    AAFwk::Want want;
     want.SetParam(AD_RESPONSE_AD_TYPE, root[AD_RESPONSE_AD_TYPE].asInt());
     std::string rewardConfig = Json::FastWriter().write(root[AD_RESPONSE_REWARD_CONFIG]);
     want.SetParam(AD_RESPONSE_REWARD_CONFIG, rewardConfig);
@@ -46,6 +48,12 @@ inline void ParseSingleAd(std::vector<AAFwk::Want> &ads, Json::Value &root)
     want.SetParam(AD_RESPONSE_REWARDED, root[AD_RESPONSE_REWARDED].asBool());
     want.SetParam(AD_RESPONSE_SHOWN, root[AD_RESPONSE_SHOWN].asBool());
     want.SetParam(AD_RESPONSE_CLICKED, root[AD_RESPONSE_CLICKED].asBool());
+}
+
+inline void ParseSingleAd(std::vector<AAFwk::Want> &ads, Json::Value &root)
+{
+    AAFwk::Want want;
+    CommonParse(want, root);
     ads.emplace_back(want);
 }
 
@@ -64,23 +72,52 @@ void ParseAdArray(std::string adsString, std::vector<AAFwk::Want> &ads)
     }
 }
 
+void ParseAdMap(std::string adsString, std::map<std::string, std::vector<AAFwk::Want>> &ads)
+{
+    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "multi solts kit return enter 202");
+    Json::Reader reader;
+    Json::Value root;
+    bool parseResult = reader.parse(adsString, root);
+    if (!parseResult) {
+        ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "parse ad map result is = %{public}d", parseResult);
+        return;
+    }
+    for (Json::ValueIterator itr = root.begin(); itr != root.end(); itr++) {
+        std::string key = itr.key().asString();
+        std::vector<AAFwk::Want> want;
+        std::string value = Json::FastWriter().write(*itr);
+        ParseAdArray(value, want);
+        ads[key] = want;
+    }
+}
+
 int AdLoadCallbackStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(IAdLoadCallback::Message::AD_LOAD_SUCCESS): {
-            std::string adsArray = Str16ToStr8(data.ReadString16());
-            std::vector<AAFwk::Want> ads;
-            ParseAdArray(adsArray, ads);
-            OnAdLoadSuccess(ads);
+        case static_cast<uint32_t>(IAdLoadCallback::Message::AD_LOAD): {
+            int32_t resultCode = data.ReadInt32();
+            ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "single solts kit return code = %{public}u", resultCode);
+            std::string resultMsg = Str16ToStr8(data.ReadString16());
+            if (resultCode == LOAD_AD_SUCCESS) {
+                std::vector<AAFwk::Want> ads;
+                ParseAdArray(resultMsg, ads);
+                OnAdLoadSuccess(ads);
+            } else {
+                OnAdLoadFailure(resultCode, resultMsg);
+            }
             break;
         }
-        case static_cast<uint32_t>(IAdLoadCallback::Message::AD_LOAD_PARAMS_ERROR):
-        case static_cast<uint32_t>(IAdLoadCallback::Message::AD_LOAD_INNER_ERROR):
-        case static_cast<uint32_t>(IAdLoadCallback::Message::AD_LOAD_FAIL): {
+        case static_cast<uint32_t>(IAdLoadCallback::Message::MULTI_AD_LOAD): {
+            int32_t resultCode = data.ReadInt32();
+            ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "multi solts kit return code = %{public}u", resultCode);
             std::string msg = Str16ToStr8(data.ReadString16());
-            ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "OnAdLoadFailed kit return code = %{public}u, msg = %{public}s",
-                code, msg.c_str());
-            OnAdLoadFailed(code, msg);
+            if (resultCode == LOAD_AD_SUCCESS) {
+                std::map<std::string, std::vector<AAFwk::Want>> adsMap;
+                ParseAdMap(msg, adsMap);
+                OnAdLoadMultiSlotsSuccess(adsMap);
+            } else {
+                OnAdLoadFailure(resultCode, msg);
+            }
             break;
         }
         default:

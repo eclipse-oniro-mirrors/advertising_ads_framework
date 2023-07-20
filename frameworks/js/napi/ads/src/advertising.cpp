@@ -36,6 +36,8 @@ namespace CloudNapi {
 namespace AdsNapi {
 using Want = OHOS::AAFwk::Want;
 static constexpr const int MAX_STRING_LENGTH = 65536;
+static const int32_t LOAD_AD_TYPE = 1;
+static const int32_t LOAD_MULTI_AD_TYPE = 2;
 static const int32_t SHOW_AD_PARA = 2;
 static const int32_t AD_LOADER_PARA = 3;
 static const int32_t AD_STANDARD_SIZE = 6;
@@ -109,7 +111,8 @@ void GetCloudServiceProvider(CloudServiceProvider &cloudServiceProvider)
     ifs.close();
 
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI,
-        "Cloud Service provider from config bundleName is %{public}s, abilityName is %{public}s, uiAbility is %{public}s",
+        "Cloud Service provider from config bundleName is %{public}s, abilityName is %{public}s, uiAbility is "
+        "%{public}s",
         cloudServiceProvider.bundleName.c_str(), cloudServiceProvider.abilityName.c_str(),
         cloudServiceProvider.uiAbilityName.c_str());
 }
@@ -370,7 +373,7 @@ napi_value ParseAdvertismentByAd(napi_env &env, napi_value &argv, Advertisment &
     if (GetBoolProperty(env, argv, AD_RESPONSE_CLICKED, advertisment.clicked) == nullptr) {
         return nullptr;
     }
-    if (static_cast<int>(valueCount) > AD_STANDARD_SIZE) {
+    if (static_cast<int> (valueCount) > AD_STANDARD_SIZE) {
         ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "advertisment has extra value");
         std::vector<std::string> keyArray{ AD_RESPONSE_AD_TYPE, AD_RESPONSE_REWARD_CONFIG, AD_RESPONSE_UNIQUE_ID,
             AD_RESPONSE_REWARDED, AD_RESPONSE_SHOWN, AD_RESPONSE_CLICKED };
@@ -461,14 +464,14 @@ bool ParseJSCallback(const napi_env &env, const napi_value &argv, AdJSCallback &
         return false;
     }
     bool hasPropFailed = false;
-    napi_has_named_property(env, argv, "onAdLoadFailed", &hasPropFailed);
+    napi_has_named_property(env, argv, "onAdLoadFailure", &hasPropFailed);
     bool hasPropSuccess = false;
     napi_has_named_property(env, argv, "onAdLoadSuccess", &hasPropSuccess);
     if (!hasPropFailed || !hasPropSuccess) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "AdJSCallback has no function");
         return false;
     }
-    return GetNamedFunction(env, argv, "onAdLoadFailed", callback.onAdLoadFailed) &&
+    return GetNamedFunction(env, argv, "onAdLoadFailure", callback.onAdLoadFailure) &&
         GetNamedFunction(env, argv, "onAdLoadSuccess", callback.onAdLoadSuccess);
 }
 
@@ -499,7 +502,7 @@ napi_value ParseContextForLoadAd(napi_env env, napi_callback_info info, Advertis
     // argv[2]
     AdJSCallback callback;
     ParseJSCallback(env, argv[2], callback);
-    context->adLoadCallback = new (std::nothrow) AdLoadListenerCallback(env, callback);  // 2 params
+    context->adLoadCallback = new (std::nothrow) AdLoadListenerCallback(env, callback); // 2 params
     return NapiGetNull(env);
 }
 
@@ -520,13 +523,104 @@ napi_value Advertising::LoadAd(napi_env env, napi_callback_info info)
         [](napi_env env, void *data) {
             auto *asyncContext = reinterpret_cast<AdvertisingRequestContext *>(data);
             ErrCode errCode = AdvertisingServiceClient::GetInstance()->LoadAd(asyncContext->requestString,
-                asyncContext->optionString, asyncContext->adLoadCallback);
+                asyncContext->optionString, asyncContext->adLoadCallback, LOAD_AD_TYPE);
             asyncContext->errorCode = errCode;
         },
         [](napi_env env, napi_status status, void *data) {
             auto *asyncContext = reinterpret_cast<AdvertisingRequestContext *>(data);
             if ((asyncContext->errorCode != 0) && (asyncContext->adLoadCallback != nullptr)) {
-                asyncContext->adLoadCallback->OnAdLoadFailed(asyncContext->errorCode, "failed");
+                asyncContext->adLoadCallback->OnAdLoadFailure(asyncContext->errorCode, "failed");
+            }
+            napi_delete_async_work(env, asyncContext->asyncWork);
+            delete asyncContext;
+            asyncContext = nullptr;
+        },
+        reinterpret_cast<void *>(asyncContext), &asyncContext->asyncWork));
+    NAPI_CALL(env, napi_queue_async_work(env, asyncContext->asyncWork));
+    return NapiGetNull(env);
+}
+
+bool GetAdsArray(napi_env env, napi_value argv, Json::Value &root)
+{
+    bool isArray = false;
+    NAPI_CALL_BASE(env, napi_is_array(env, argv, &isArray), false);
+    if (!isArray) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "multi slots request is not array");
+        return false;
+    }
+    uint32_t length = 0;
+    NAPI_CALL_BASE(env, napi_get_array_length(env, argv, &length), false);
+    if (length == 0) {
+        return false;
+    }
+    for (size_t i = 0; i < length; i++) {
+        napi_value adParam = nullptr;
+        NAPI_CALL_BASE(env, napi_get_element(env, argv, i, &adParam), false);
+        Json::Value singleRoot;
+        if (ParseObjectFromJs(env, adParam, singleRoot) == nullptr) {
+            ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "multi slots parse single ad failed");
+            return false;
+        }
+        root[static_cast<int>(i)] = singleRoot;
+    }
+    return true;
+}
+
+napi_value ParseContextForMultiSlots(napi_env env, napi_callback_info info, MultiSlotsRequestContext *context)
+{
+    size_t argc = AD_LOADER_PARA;
+    napi_value argv[AD_LOADER_PARA] = {nullptr};
+    napi_value thisVar = nullptr;
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, nullptr);
+    // argv[0]
+    Json::Value requestRoot;
+    if (!GetAdsArray(env, argv[0], requestRoot)) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "GetAdsArray failed");
+        return NapiGetNull(env);
+    }
+    std::string requestRootString = Json::FastWriter().write(requestRoot);
+    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "requestRootString is: %{public}s", requestRootString.c_str());
+    context->mulitRequestString = requestRootString;
+    // argv[1]
+    Json::Value optionRoot;
+    if (ParseObjectFromJs(env, argv[1], optionRoot) == nullptr) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "parse multi ad option failed");
+        return NapiGetNull(env);
+    }
+    std::string optionRootString = Json::FastWriter().write(optionRoot);
+    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "optionRootString is: %{public}s", optionRootString.c_str());
+    context->mulitOptionString = optionRootString;
+    //  argv[2]
+    AdJSCallback callback;
+    ParseJSCallback(env, argv[2], callback);
+    context->mulitAdLoadCallback = new (std::nothrow) AdLoadListenerCallback(env, callback);
+    return NapiGetNull(env);
+}
+
+napi_value Advertising::LoadAdWithMultiSlots(napi_env env, napi_callback_info info)
+{
+    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "LoadAdWithMultiSlots enter");
+    auto *asyncContext = new (std::nothrow) MultiSlotsRequestContext();
+    if (asyncContext == nullptr) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "create multi slots context failed");
+        return NapiGetNull(env);
+    }
+    asyncContext->env = env;
+    ParseContextForMultiSlots(env, info, asyncContext);
+    napi_value resourceName = nullptr;
+    NAPI_CALL(env, napi_create_string_latin1(env, "LoadAdWithMultiSlots", NAPI_AUTO_LENGTH, &resourceName));
+    NAPI_CALL(env, napi_create_async_work(
+        env, nullptr, resourceName,
+        [](napi_env env, void *data) {
+            auto *asyncContext = reinterpret_cast<MultiSlotsRequestContext *>(data);
+            ErrCode errCode = AdvertisingServiceClient::GetInstance()->LoadAd(asyncContext->mulitRequestString,
+                asyncContext->mulitOptionString, asyncContext->mulitAdLoadCallback, LOAD_MULTI_AD_TYPE);
+            asyncContext->errorCode = errCode;
+        },
+        [](napi_env env, napi_status status, void *data) {
+            auto *asyncContext = reinterpret_cast<MultiSlotsRequestContext *>(data);
+            if ((asyncContext->errorCode != 0) && (asyncContext->mulitAdLoadCallback != nullptr)) {
+                asyncContext->mulitAdLoadCallback->OnAdLoadFailure(asyncContext->errorCode, "failed");
             }
             napi_delete_async_work(env, asyncContext->asyncWork);
             delete asyncContext;
@@ -546,6 +640,7 @@ napi_value Advertising::AdvertisingInit(napi_env env, napi_value exports)
         napi_define_properties(env, exports, sizeof(descriptor) / sizeof(napi_property_descriptor), descriptor));
     napi_property_descriptor properties[] = {
         DECLARE_NAPI_FUNCTION("loadAd", LoadAd),
+        DECLARE_NAPI_FUNCTION("loadAdWithMultiSlots", LoadAdWithMultiSlots),
     };
     napi_value constructor = nullptr;
     NAPI_CALL(env, napi_define_class(env, AD_LOADER_CLASS_NAME.c_str(), AD_LOADER_CLASS_NAME.size(), JsConstructor,

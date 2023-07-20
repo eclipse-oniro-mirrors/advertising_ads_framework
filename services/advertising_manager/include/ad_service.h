@@ -27,6 +27,7 @@
 #include "system_ability.h"
 #include "errors.h"
 #include "ad_load_proxy.h"
+#include "iad_load_proxy.h"
 #include "iad_load_callback.h"
 
 namespace OHOS {
@@ -52,7 +53,7 @@ public:
     AdvertisingService();
     virtual ~AdvertisingService() override;
     ErrCode LoadAd(const std::string &request, const std::string &options, const sptr<IRemoteObject> &callback,
-        uint32_t callingUid) override;
+        uint32_t callingUid, int32_t loadAdType) override;
     void GetCloudServiceProvider(AdServiceElementName &cloudServiceProvider);
 
 protected:
@@ -60,8 +61,8 @@ protected:
     void OnStop() override;
 
 private:
-    bool ConnectAdKit(uint32_t callingUid, const std::string &adRequest, const std::string &adoptions,
-        const std::string &adCollection, const sptr<IAdLoadCallback> &callback);
+    bool ConnectAdKit(uint32_t callingUid, const sptr<AdRequestData> &data, const sptr<IAdLoadCallback> &callback,
+        int32_t loadAdType);
     AdsServiceRunningState state_;
     static std::mutex lock_;
     static sptr<AdvertisingService> instance_;
@@ -70,13 +71,9 @@ private:
 
 class AdRequestConnection : public AAFwk::AbilityConnectionStub {
 public:
-    AdRequestConnection(uint32_t callingUid, const std::string &adRequest, const std::string &adoptions,
-        const std::string &adCollection, const sptr<IAdLoadCallback> &callback)
-        : callingUid_(callingUid),
-          adRequest_(adRequest),
-          adoptions_(adoptions),
-          adCollection_(adCollection),
-          callback_(callback){};
+    AdRequestConnection(uint32_t callingUid, const sptr<AdRequestData> &data, const sptr<IAdLoadCallback> &callback,
+        int32_t loadAdType)
+        : callingUid_(callingUid), data_(data), callback_(callback), loadAdType_(loadAdType){};
     ~AdRequestConnection() = default;
 
     void OnAbilityConnectDone(const AppExecFwk::ElementName &element, const sptr<IRemoteObject> &remoteObject,
@@ -85,10 +82,9 @@ public:
 
 private:
     uint32_t callingUid_;
-    std::string adRequest_;
-    std::string adoptions_;
-    std::string adCollection_;
+    sptr<AdRequestData> data_;
     sptr<IAdLoadCallback> callback_;
+    int32_t loadAdType_;
     sptr<AdLoadSendRequestProxy> proxy_{ nullptr };
 };
 } // namespace Cloud

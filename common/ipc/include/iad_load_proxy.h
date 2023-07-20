@@ -21,15 +21,26 @@
 
 #include "iremote_broker.h"
 #include "iad_load_callback.h"
+#include "refbase.h"
 
 namespace OHOS {
 namespace Cloud {
+struct AdRequestData : public RefBase {
+    std::string adRequest;
+    std::string adOption;
+    std::string collection;
+
+    AdRequestData(std::string remoteAdRequest, std::string remoteAdOption, std::string remoteCollection)
+        : adRequest(remoteAdRequest), adOption(remoteAdOption), collection(remoteCollection)
+    {}
+};
+
 class IAdLoadSendRequest : public IRemoteBroker {
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.Cloud.Ads.IAdLoadSendRequest");
 
-    virtual ErrCode SendAdLoadRequest(uint32_t callingUid, const std::string &adRequest, const std::string &adOption,
-        const std::string &collection, const sptr<IAdLoadCallback> &callback) = 0;
+    virtual ErrCode SendAdLoadRequest(uint32_t callingUid, const sptr<AdRequestData> &data,
+        const sptr<IAdLoadCallback> &callback, int32_t loadAdType) = 0;
 };
 } // namespace Cloud
 } // namespace OHOS

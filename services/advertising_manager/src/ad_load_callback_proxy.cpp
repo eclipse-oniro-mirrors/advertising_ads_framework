@@ -42,10 +42,21 @@ void AdLoadCallbackProxy::OnAdLoadSuccess(const std::vector<AAFwk::Want> &result
             return;
         }
     }
-    SendRequest(IAdLoadCallback::Message::AD_LOAD_SUCCESS, data, reply);
+    SendRequest(IAdLoadCallback::Message::AD_LOAD, data, reply);
 }
 
-void AdLoadCallbackProxy::OnAdLoadFailed(int32_t resultCode, const std::string &resultMsg)
+void AdLoadCallbackProxy::OnAdLoadMultiSlotsSuccess(const std::map<std::string, std::vector<AAFwk::Want>> &result)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_COMMON, "failed to write descriptor!");
+        return;
+    }
+    SendRequest(IAdLoadCallback::Message::MULTI_AD_LOAD, data, reply);
+}
+
+void AdLoadCallbackProxy::OnAdLoadFailure(int32_t resultCode, const std::string &resultMsg)
 {
     MessageParcel data;
     MessageParcel reply;

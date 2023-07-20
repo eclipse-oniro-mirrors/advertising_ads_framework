@@ -30,8 +30,8 @@ inline std::u16string Str8ToStr16(const std::string &str)
     return result;
 }
 
-ErrCode AdLoadSendRequestProxy::SendAdLoadRequest(uint32_t callingUid, const std::string &adRequest,
-    const std::string &adOption, const std::string &collection, const sptr<IAdLoadCallback> &callback)
+ErrCode AdLoadSendRequestProxy::SendAdLoadRequest(uint32_t callingUid, const sptr<AdRequestData> &requestData,
+    const sptr<IAdLoadCallback> &callback, int32_t loadAdType)
 {
     if (callback == nullptr) {
         ADS_HILOGI(OHOS::Cloud::ADS_MODULE_SERVICE, "callback is null");
@@ -45,19 +45,19 @@ ErrCode AdLoadSendRequestProxy::SendAdLoadRequest(uint32_t callingUid, const std
         ADS_HILOGE(OHOS::Cloud::ADS_MODULE_SERVICE, "failed to WriteRemoteObject");
         return ERR_AD_COMMON_AD_WRITE_PARCEL_ERROR;
     }
-    if (!data.WriteString16(Str8ToStr16(adRequest))) {
+    if (!data.WriteString16(Str8ToStr16(requestData->adRequest))) {
         ADS_HILOGE(OHOS::Cloud::ADS_MODULE_SERVICE, "failed to adRequest");
         return ERR_AD_COMMON_AD_WRITE_PARCEL_ERROR;
     }
-    if (!data.WriteString16(Str8ToStr16(adOption))) {
+    if (!data.WriteString16(Str8ToStr16(requestData->adOption))) {
         ADS_HILOGE(OHOS::Cloud::ADS_MODULE_SERVICE, "failed to adOption");
         return ERR_AD_COMMON_AD_WRITE_PARCEL_ERROR;
     }
-    if (!data.WriteString16(Str8ToStr16(collection))) {
+    if (!data.WriteString16(Str8ToStr16(requestData->collection))) {
         ADS_HILOGE(OHOS::Cloud::ADS_MODULE_SERVICE, "failed to collection");
         return ERR_AD_COMMON_AD_WRITE_PARCEL_ERROR;
     }
-    return SendAdLoadIpcRequest(SEND_LOAD_AD_REQUEST_CODE, data);
+    return SendAdLoadIpcRequest(loadAdType, data);
 }
 
 ErrCode AdLoadSendRequestProxy::SendAdLoadIpcRequest(int32_t code, MessageParcel &data)
