@@ -13,13 +13,11 @@
  * limitations under the License.
  */
 
-import UIAbilityContext from './application/UIAbilityContext';
-import { AsyncCallback } from '@ohos.base';
+import common from './@ohos.app.ability.common';
 import { Advertisement as _Advertisement } from './advertising/advertisement';
 
 /**
- * Advertising.
- *
+ * This module provides the capability to load and display advertisements.
  * @namespace advertising
  * @syscap SystemCapability.Cloud.Ads
  * @since 10
@@ -34,8 +32,7 @@ declare namespace advertising {
 
   /**
    * The parameters in the request for loading one or more advertisements.
-   *
-   * @interface AdRequestParams
+   * @typedef AdRequestParams
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
@@ -50,7 +47,7 @@ declare namespace advertising {
 
     /**
      * The advertisement type of request.
-     * @type { string }
+     * @type { ?number }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
@@ -58,27 +55,35 @@ declare namespace advertising {
 
     /**
      * The advertisement quantity of request.
-     * @type { number }
+     * @type { ?number }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     adCount?: number;
 
     /**
-     * The advertisement view size width that expect.
-     * @type { number }
+     * The advertisement view size width that expects.
+     * @type { ?number }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     adWidth?: number;
 
     /**
-     * The advertisement view size height that expect.
-     * @type { number }
+     * The advertisement view size height that expects.
+     * @type { ?number }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     adHeight?: number;
+
+    /**
+     * The advertisement search keyword.
+     * @type { ?string }
+     * @syscap SystemCapability.Cloud.Ads
+     * @since 10
+     */
+    adSearchKeyword?: string;
 
     /**
      * The extended attributes for request parameters.
@@ -90,38 +95,38 @@ declare namespace advertising {
   }
 
   /**
-   * Load advertising options.
-   * @interface AdOptions
+   * Load ad options.
+   * @typedef AdOptions
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
   export interface AdOptions {
     /**
      * The tags for children's content.
-     * @type { number }
+     * @type { ?number }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     tagForChildProtection?: number;
 
     /**
-     * Advertisement content Classification setting.
-     * @type { string }
+     * Advertisement content classification setting.
+     * @type { ?string }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     adContentClassification?: string;
 
     /**
-     * Non-personalized advertising settings.
-     * @type { number }
+     * Non-personalized ad settings.
+     * @type { ?number }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     nonPersonalizedAd?: number;
 
     /**
-     * The extended attributes for advertising options.
+     * The extended attributes for ad options.
      * @type { number | boolean | string | undefined }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
@@ -130,23 +135,23 @@ declare namespace advertising {
   }
 
   /**
-   * The interaction options info for show advertising.
-   * @interface AdDisplayOptions
+   * The interaction options info for displaying ad.
+   * @typedef AdDisplayOptions
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
   export interface AdDisplayOptions {
     /**
-     * Advertising custom data.
-     * @type { string }
+     * Ad custom data.
+     * @type { ?string }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     customData?: string;
 
     /**
-     * Advertising user Id.
-     * @type { string }
+     * User id.
+     * @type { ?string }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
@@ -155,15 +160,15 @@ declare namespace advertising {
     /**
      * Indicates whether a dialog box is displayed to notify users of video playback
      * and application download in non-Wi-Fi scenarios.
-     * @type { boolean }
+     * @type { ?boolean }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     useMobileDataReminder?: boolean;
 
     /**
-     * Indicates whether to mute the playback of the incentive ad video.
-     * @type { boolean }
+     * Indicates whether to mute the playback of the ad video.
+     * @type { ?boolean }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
@@ -171,7 +176,7 @@ declare namespace advertising {
 
     /**
      * The type of the scenario where the audio focus is obtained during video playback.
-     * @type { number }
+     * @type { ?number }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
@@ -194,10 +199,10 @@ declare namespace advertising {
    */
   export interface AdInteractionListener {
     /**
-     * Ads status callback
-     * @param status The current advertising status. The status contains onAdOpen,onAdClose,onAdReward,onAdClick,onVideoPlayBegin and onVideoPlayEnd
-     * @param ad - The ad which status is changed
-     * @param data The data of current advertising status
+     * Ads status callback.
+     * @param { string } status - The current ad status. The status contains onAdOpen,onAdClose,onAdReward,onAdClick,onVideoPlayBegin and onVideoPlayEnd.
+     * @param { Advertisement } ad - The ad which status is changed.
+     * @param { string } data - The data of current ad status.
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
@@ -205,7 +210,7 @@ declare namespace advertising {
   }
 
   /**
-   * The listener of load advertising.
+   * The listener of load ad.
    * @interface AdLoadListener
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
@@ -213,18 +218,16 @@ declare namespace advertising {
   export interface AdLoadListener {
     /**
      * Called by system when the ad load has been failed.
-     *
      * @param { number } errorCode - code of ad loading failure.
-     * @param { string } errorMsg - error message
+     * @param { string } errorMsg - error message.
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
-    onAdLoadFailed(errorCode: number, errorMsg: string): void;
+    onAdLoadFailure(errorCode: number, errorMsg: string): void;
 
     /**
      * Called by system when the ad load has been successed.
-     *
-     * @param { Advertisement[] } ads - advertisements are loaded successfully.
+     * @param { Array<Advertisement> } ads - advertisements are loaded successfully.
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
@@ -232,78 +235,84 @@ declare namespace advertising {
   }
 
   /**
-   * Initializing the global advertisement configuration.
-   *
-   * @param { UIAbilityContext } abilityContext - Context of the Media Application.
-   * @param { AdOptions } adConfig - the global advertisement configuration.
-   * @param { AsyncCallback<void> } callback - Indicates the callback to ads init.
-   * @throws {BusinessError} 401 - Invalid input parameter.
-   * @throws {BusinessError} 21800001 - System internal error.
-   * @throws {BusinessError} 21800002 - Failed to initialize the Advertising configuration.
+   * The listener of loading multi-slots ad.
+   * @interface MultiSlotsAdLoadListener
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
-  function init(abilityContext: UIAbilityContext, adConfig: AdOptions, callback: AsyncCallback<void>): void;
+  export interface MultiSlotsAdLoadListener {
+    /**
+     * Called by system when the ad load has been failed.
+     * @param { number } errorCode - code of ad loading failure.
+     * @param { string } errorMsg - error message.
+     * @syscap SystemCapability.Cloud.Ads
+     * @since 10
+     */
+    onAdLoadFailure(errorCode: number, errorMsg: string): void;
+
+    /**
+     * Called by system when the ad load has been successed.
+     * @param { Map<string, Array<Advertisement>> } adsMap - advertisements are loaded successfully.
+     * @syscap SystemCapability.Cloud.Ads
+     * @since 10
+     */
+    onAdLoadSuccess(adsMap: Map<string, Array<Advertisement>>): void;
+  }
 
   /**
-   * Initializing the global advertisement configuration.
-   *
-   * @param { UIAbilityContext } abilityContext - Context of the Media Application.
-   * @param { AdOptions } adConfig - the global advertisement configuration.
-   * @returns { Promise<void> } the promise returned by the function.
-   * @throws {BusinessError} 401 - Invalid input parameter.
-   * @throws {BusinessError} 21800001 - System internal error.
-   * @throws {BusinessError} 21800002 - Failed to initialize the Advertising configuration.
+   * Show the reward and interstitial ad.
+   * @param { Advertisement } ad - Indicates the advertisement content information.
+   * @param { AdDisplayOptions } option - Indicates interaction option object use to show the ad.
+   * @param { UIAbilityContext } context - Indicates the ui ability context of the media application.
+   * @throws { BusinessError } 401 - Invalid input parameter.
+   * @throws { BusinessError } 21800001 - System internal error.
+   * @throws { BusinessError } 21800004 - Failed to display the ad.
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
-  function init(abilityContext: UIAbilityContext, adConfig: AdOptions): Promise<void>;
+  function showAd(ad: Advertisement, option: AdDisplayOptions, context?: common.UIAbilityContext): void;
 
   /**
-   * Show full screen advertising.
-   *
-   * @param { UIAbilityContext } context - Indicates the UIAbility Context of the Media Application.
-   * @param { Advertisement } ad - Indicates the Advertisement content information.
-   * @param { AdDisplayOptions } option - Indicates Interaction option object use to the show Ad object.
-   * @throws {BusinessError} 401 - Invalid input parameter.
-   * @throws {BusinessError} 21800001 - System internal error.
-   * @throws {BusinessError} 21800004 - Failed to display the Advertising.
-   * @syscap SystemCapability.Cloud.Ads
-   * @since 10
-   */
-  function showAd(context: UIAbilityContext, ad: Advertisement, option: AdDisplayOptions): void;
-
-  /**
-   * A class for advertising loader.
-   *
-   * The AdLoader contains the function of requesting to load advertising.
-   * All advertising parameters are obtained from this function.
+   * A class for ad loader.
+   * The AdLoader contains the function of requesting to load ad.
+   * All ad parameters are obtained from this function.
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
   export class AdLoader {
     /**
-     * Constructs a AdLoader object, UIAbilityContext should be transferred.
-     *
-     * @param { UIAbilityContext } abilityContext - Indicates the UIAbility Context of the Media Application.
+     * Constructs a adLoader object, context should be transferred.
+     * @param { Context } context - Indicates the context of the media application.
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
-    constructor(abilityContext: UIAbilityContext);
+    constructor(context: common.Context);
 
     /**
-     * Load advertising.
-     *
+     * Load ad.
      * @param { AdRequestParams } adParam - Indicates the parameters in the request for load ad.
-     * @param { AdOptions } adOptions - Indicates the global advertisement configuration.
+     * @param { AdOptions } adOptions - Indicates the advertisement configuration.
      * @param { AdLoadListener } listener - Indicates the listener to be registered that use to load Ad.
-     * @throws {BusinessError} 401 - Invalid input parameter.
-     * @throws {BusinessError} 21800001 - System internal error.
-     * @throws {BusinessError} 21800003 - Failed to load the ad request.
+     * @throws { BusinessError } 401 - Invalid input parameter.
+     * @throws { BusinessError } 21800001 - System internal error.
+     * @throws { BusinessError } 21800003 - Failed to load the ad request.
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     loadAd(adParam: AdRequestParams, adOptions: AdOptions, listener: AdLoadListener): void;
+
+    /**
+     * Load ad with multi-slots.
+     * @param { AdRequestParams[] } adParams - Indicates the parameters in the request for load ad.
+     * @param { AdOptions } adOptions - Indicates the advertisement configuration.
+     * @param { MultiSlotsAdLoadListener } listener - Indicates the listener to be registered that use to load ad.
+     * @throws { BusinessError } 401 - Invalid input parameter.
+     * @throws { BusinessError } 21800001 - System internal error.
+     * @throws { BusinessError } 21800003 - Failed to load the ad request.
+     * @syscap SystemCapability.Cloud.Ads
+     * @since 10
+     */
+    loadAdWithMultiSlots(adParams: AdRequestParams[], adOptions: AdOptions, listener: MultiSlotsAdLoadListener): void;
   }
 }
 

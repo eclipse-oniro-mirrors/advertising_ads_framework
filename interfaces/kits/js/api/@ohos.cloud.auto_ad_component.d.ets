@@ -13,22 +13,30 @@
  * limitations under the License.
  */
 
-import advertising from '@ohos.advertising';
+import advertising from './@ohos.advertising';
 
 /**
- * Defines the Advertising Component.
+ * Defines the auto ad component.
  * @syscap SystemCapability.Cloud.Ads
  * @since 10
  */
 @Component
-declare struct AdvertisingComponent {
+declare struct AutoAdComponent {
     /**
-     * The ads to display.
-     * @type { Advertisement }
+     * The parameters in the request for loading ad.
+     * @type { AdRequestParams }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
-    ads: advertising.Advertisement[];
+    adParam: advertising.AdRequestParams;
+
+    /**
+     * The advertisement configuration.
+     * @type { AdOptions }
+     * @syscap SystemCapability.Cloud.Ads
+     * @since 10
+     */
+    adOptions: advertising.AdOptions;
 
     /**
      * The interaction options info for displaying ads.
@@ -47,11 +55,11 @@ declare struct AdvertisingComponent {
     interactionListener: advertising.AdInteractionListener;
 
     /**
-     * The method to build AdView component.
+     * The method to build auto ad component.
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
      */
     build(): void;
 }
 
-export { AdvertisingComponent };
+export { AutoAdComponent };

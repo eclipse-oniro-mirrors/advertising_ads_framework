@@ -14,44 +14,19 @@
  */
 
 /**
- * Defines the advertisement.
- *
- * @interface Advertisement
+ * Defines the advertisement type.
+ * @typedef Advertisement
  * @syscap SystemCapability.Cloud.Ads
  * @since 10
  */
 export interface Advertisement {
   /**
-   * The advertising type.
+   * The ad type.
    * @type { number }
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
   adType: number;
-
-  /**
-   * The content id that is being played in the media.
-   * @type { string }
-   * @syscap SystemCapability.Cloud.Ads
-   * @since 10
-   */
-  contentId: string;
-
-  /**
-   * The advertising close keywords.
-   * @type { string[] }
-   * @syscap SystemCapability.Cloud.Ads
-   * @since 10
-   */
-  adCloseKeywords: string[];
-
-  /**
-   * The detailed creative type returned by an advertisement.
-   * @type { number }
-   * @syscap SystemCapability.Cloud.Ads
-   * @since 10
-   */
-  creativeType: number;
 
   /**
    * The server verifies the configuration parameters.
@@ -62,15 +37,7 @@ export interface Advertisement {
   rewardVerifyConfig: Map<string, string>;
 
   /**
-   * The advertising content data.
-   * @type { object }
-   * @syscap SystemCapability.Cloud.Ads
-   * @since 10
-   */
-  adContentData: object;
-
-  /**
-   * The unique identifier of the advertising event generation.
+   * The unique identifier of the ad event generation.
    * @type { string }
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
