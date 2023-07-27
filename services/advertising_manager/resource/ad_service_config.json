@@ -1,6 +1,6 @@
 {
-    "providerBundleName": [""],
-    "providerAbilityName": [""],
-    "providerUIAbilityName": [""],
-    "providerUEAAbilityName": [""]
+    "providerBundleName": ["com.huawei.hms.hmscore"],
+    "providerAbilityName": ["AdsCoreService"],
+    "providerUIAbilityName": ["FullScreenAdAbility"],
+    "providerUEAAbilityName": ["AdsUIExtensionAbility"]
 }
