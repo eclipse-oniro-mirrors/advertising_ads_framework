@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-const fs = globalThis.requireNapi('file.fs');
-const hilog = globalThis.requireNapi('hilog');
-const HILOG_DOMAIN_CODE = 65280;
+let fs = globalThis.requireNapi('file.fs');
+let hilog = globalThis.requireNapi('hilog');
 const READ_FILE_BUFFER_SIZE = 4096;
+const HILOG_DOMAIN_CODE = 65280;
 
 class AdComponent extends ViewPU {
   constructor(e, t, o, s = -1) {
@@ -46,10 +46,6 @@ class AdComponent extends ViewPU {
     this.aboutToBeDeletedInternal();
   }
 
-  onStatusCallback(e) {
-    this.interactionListener.onStatusChanged(e.status, e.ad, e.data);
-  }
-
   aboutToAppear() {
     let e = this.getConfigJsonData();
     this.want = {
@@ -68,6 +64,7 @@ class AdComponent extends ViewPU {
       let s = String.fromCharCode(...new Uint8Array(o));
       s = s.replace(/[\r\n\t\"]/g, '').replace(/\s*/g, '').replace(/\[|\]/g, '');
       e = this.toMap(s);
+      fs.closeSync(t.fd);
       hilog.info(HILOG_DOMAIN_CODE, 'AdComponent', 'file succeed');
     } catch (e) {
       hilog.error(HILOG_DOMAIN_CODE, 'AdComponent', `open file failed with error:${e.code}, message:${e.message}`);
@@ -110,6 +107,9 @@ class AdComponent extends ViewPU {
     this.observeComponentCreation(((e, t) => {
       ViewStackProcessor.StartGetAccessRecordingFor(e);
       UIExtensionComponent.create(this.want);
+      UIExtensionComponent.onReceive((e => {
+        this.interactionListener.onStatusChanged(e.status, e.ad, e.data);
+      }));
       UIExtensionComponent.width('100%');
       UIExtensionComponent.height('100%');
       t || UIExtensionComponent.pop();

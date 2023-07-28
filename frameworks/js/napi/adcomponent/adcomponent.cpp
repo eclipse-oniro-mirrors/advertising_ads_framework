@@ -25,19 +25,19 @@
  * In this example, MiddleName is defined as xx_abc,
  * which can be customized but must match the target name of gen_js_obj in BUILD.gn.
  */
-extern const char _binary_ad_component_abc_start[];
-extern const char _binary_ad_component_abc_end[];
- 
+extern const char _binary_adcomponent_abc_start[];
+extern const char _binary_adcomponent_abc_end[];
+
 // function name: NAPI_{ModuleName}_GetABCCode
-extern "C" __attribute__((visibility("default"))) void NAPI_cloud_ad_component_GetABCCode(
+extern "C" __attribute__((visibility("default"))) void NAPI_cloud_AdComponent_GetABCCode(
     const char** buf, int* bufLen)
 {
     if (buf != nullptr) {
-        *buf = _binary_ad_component_abc_start;
+        *buf = _binary_adcomponent_abc_start;
     }
  
     if (bufLen != nullptr) {
-        *bufLen = _binary_ad_component_abc_end - _binary_ad_component_abc_start;
+        *bufLen = _binary_adcomponent_abc_end - _binary_adcomponent_abc_start;
     }
 }
 
@@ -48,7 +48,7 @@ static napi_module adComponentModule = {
     .nm_version = 1,
     .nm_flags = 0,
     .nm_filename = nullptr,
-    .nm_modname = "cloud.ad_component",
+    .nm_modname = "cloud.AdComponent",
     .nm_priv = ((void*)0),
     .reserved = { 0 },
 };
