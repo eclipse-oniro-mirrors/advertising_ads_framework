@@ -23,7 +23,7 @@ import advertising from './@ohos.advertising';
 @Component
 declare struct AutoAdComponent {
     /**
-     * The parameters in the request for loading ad.
+     * The parameters in the request for loading ads.
      * @type { AdRequestParams }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10
@@ -31,7 +31,7 @@ declare struct AutoAdComponent {
     adParam: advertising.AdRequestParams;
 
     /**
-     * The advertisement configuration.
+     * The ad options of loading ads.
      * @type { AdOptions }
      * @syscap SystemCapability.Cloud.Ads
      * @since 10

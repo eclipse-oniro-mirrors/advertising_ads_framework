@@ -19,6 +19,7 @@ group("advertising_native_packages") {
       "interfaces/kits/js:advertising",
       "frameworks/js/napi/ads:advertising",
       "frameworks/js/napi/adcomponent:adcomponent",
+      "frameworks/js/napi/autoadcomponent:autoadcomponent",
       "sa_profile:cloud_advertising_sa_profiles",
       "services:advertising_service",
       "services:ad_service_config_json",
