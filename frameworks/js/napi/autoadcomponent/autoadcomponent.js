@@ -24,6 +24,7 @@ const MAX_REFRESH_TIME = 12e4;
 const MIN_REFRESH_TIME = 3e4;
 
 const HILOG_DOMAIN_CODE = 65280;
+const READ_FILE_BUFFER_SIZE = 4096;
 
 class AutoAdComponent extends ViewPU {
   constructor(e, t, i, o = -1) {
@@ -95,7 +96,7 @@ class AutoAdComponent extends ViewPU {
     let e = null;
     try {
       const t = fs.openSync('/system/etc/cloud/advertising/ad_service_config.json');
-      const i = new ArrayBuffer(4096);
+      const i = new ArrayBuffer(READ_FILE_BUFFER_SIZE);
       fs.readSync(t.fd, i);
       fs.closeSync(t);
       let o = String.fromCharCode(...new Uint8Array(i));
