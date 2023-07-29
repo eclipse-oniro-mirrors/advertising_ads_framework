@@ -64,7 +64,7 @@ void ParseAdArray(std::string adsString, std::vector<AAFwk::Want> &ads)
     if (reader.parse(adsString, root)) {
         if (root.type() == Json::arrayValue) {
             int size = root.size();
-            ADS_HILOGW(OHOS::Cloud::ADS_MODULE_COMMON, "ads size is: %{public}u.", size);
+            ADS_HILOGW(OHOS::Cloud::ADS_MODULE_COMMON, "ads size is: %{public}d.", size);
             for (int i = 0; i < size; i++) {
                 ParseSingleAd(ads, root[i]);
             }
@@ -74,7 +74,7 @@ void ParseAdArray(std::string adsString, std::vector<AAFwk::Want> &ads)
 
 void ParseAdMap(std::string adsString, std::map<std::string, std::vector<AAFwk::Want>> &ads)
 {
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "multi solts kit return enter 202");
+    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "multi solts kit return enter");
     Json::Reader reader;
     Json::Value root;
     bool parseResult = reader.parse(adsString, root);
@@ -96,7 +96,7 @@ int AdLoadCallbackStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
     switch (code) {
         case static_cast<uint32_t>(IAdLoadCallback::Message::AD_LOAD): {
             int32_t resultCode = data.ReadInt32();
-            ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "single solts kit return code = %{public}u", resultCode);
+            ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "single slot kit return code = %{public}u", resultCode);
             std::string resultMsg = Str16ToStr8(data.ReadString16());
             if (resultCode == LOAD_AD_SUCCESS) {
                 std::vector<AAFwk::Want> ads;
@@ -109,7 +109,7 @@ int AdLoadCallbackStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
         }
         case static_cast<uint32_t>(IAdLoadCallback::Message::MULTI_AD_LOAD): {
             int32_t resultCode = data.ReadInt32();
-            ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "multi solts kit return code = %{public}u", resultCode);
+            ADS_HILOGI(OHOS::Cloud::ADS_MODULE_COMMON, "multi slots kit return code = %{public}u", resultCode);
             std::string msg = Str16ToStr8(data.ReadString16());
             if (resultCode == LOAD_AD_SUCCESS) {
                 std::map<std::string, std::vector<AAFwk::Want>> adsMap;

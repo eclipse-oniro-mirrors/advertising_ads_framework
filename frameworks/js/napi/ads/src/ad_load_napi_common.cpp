@@ -27,7 +27,7 @@ namespace CloudNapi {
 namespace AdsNapi {
 inline void parseAdArray(napi_env env, const std::vector<AAFwk::Want> &adsArray, napi_value &inpute)
 {
-    for (int i = 0; i < adsArray.size(); ++i) {
+    for (uint32_t i = 0; i < adsArray.size(); ++i) {
         napi_value ad = AppExecFwk::WrapWantParams(env, adsArray.at(i).GetParams());
         napi_set_element(env, inpute, i, ad);
     }
@@ -69,6 +69,8 @@ void UvQueneWorkOnAdLoadSuccess(uv_work_t *work, int status)
         return;
     }
     AdCallbackParam *data = reinterpret_cast<AdCallbackParam *>(work->data);
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(data->env, &scope);
     napi_value results = nullptr;
     size_t adSize = data->ads.size();
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "return ad size is, adSize = %{public}u", static_cast<int>(adSize));
@@ -77,9 +79,10 @@ void UvQueneWorkOnAdLoadSuccess(uv_work_t *work, int status)
     napi_value undefined = nullptr;
     napi_get_undefined(data->env, &undefined);
     napi_value onAdLoadSuccessFunc = nullptr;
-    napi_value resultout = nullptr;
+    napi_value resultOut = nullptr;
     napi_get_reference_value(data->env, data->callback.onAdLoadSuccess, &onAdLoadSuccessFunc);
-    napi_call_function(data->env, undefined, onAdLoadSuccessFunc, 1, &results, &resultout);
+    napi_call_function(data->env, undefined, onAdLoadSuccessFunc, 1, &results, &resultOut);
+    napi_close_handle_scope(data->env, scope);
     delete data;
     data = nullptr;
     delete work;
@@ -94,6 +97,8 @@ void UvQueneWorkOnAdLoadMultiSlotsSuccess(uv_work_t *work, int status)
     AdCallbackParam *data = reinterpret_cast<AdCallbackParam *>(work->data);
     size_t multiAdSize = data->multiAds.size();
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "return multi ad size is: %{public}u", static_cast<int>(multiAdSize));
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(data->env, &scope);
     napi_value result = nullptr;
     napi_create_object(data->env, &result);
     for (auto it = data->multiAds.begin(); it != data->multiAds.end(); ++it) {
@@ -105,9 +110,10 @@ void UvQueneWorkOnAdLoadMultiSlotsSuccess(uv_work_t *work, int status)
     napi_value undefined = nullptr;
     napi_get_undefined(data->env, &undefined);
     napi_value onAdLoadMultiSlotsSuccessFunc = nullptr;
-    napi_value resultout = nullptr;
+    napi_value resultOut = nullptr;
     napi_get_reference_value(data->env, data->callback.onAdLoadSuccess, &onAdLoadMultiSlotsSuccessFunc);
-    napi_call_function(data->env, undefined, onAdLoadMultiSlotsSuccessFunc, 1, &result, &resultout);
+    napi_call_function(data->env, undefined, onAdLoadMultiSlotsSuccessFunc, 1, &result, &resultOut);
+    napi_close_handle_scope(data->env, scope);
     delete data;
     data = nullptr;
     delete work;
@@ -120,15 +126,18 @@ void UvQueneWorkOnAdLoadFailed(uv_work_t *work, int status)
         return;
     }
     AdCallbackParam *data = reinterpret_cast<AdCallbackParam *>(work->data);
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(data->env, &scope);
     napi_value results[2] = {0};
     napi_create_int32(data->env, data->errCode, &results[0]);
     napi_create_string_utf8(data->env, data->errMsg.c_str(), NAPI_AUTO_LENGTH, &results[1]);
     napi_value undefined = nullptr;
     napi_get_undefined(data->env, &undefined);
     napi_value onAdLoadFailedFunc = nullptr;
-    napi_value resultout = nullptr;
+    napi_value resultOut = nullptr;
     napi_get_reference_value(data->env, data->callback.onAdLoadFailure, &onAdLoadFailedFunc);
-    napi_call_function(data->env, undefined, onAdLoadFailedFunc, 2, results, &resultout); // 2 params
+    napi_call_function(data->env, undefined, onAdLoadFailedFunc, 2, results, &resultOut); // 2 params
+    napi_close_handle_scope(data->env, scope);
     delete data;
     data = nullptr;
     delete work;
