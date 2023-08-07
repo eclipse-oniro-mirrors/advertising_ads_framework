@@ -14,14 +14,14 @@
  */
 
 /**
- * Defines the advertisement type.
+ * Defines the advertisement data model.
  * @typedef Advertisement
  * @syscap SystemCapability.Cloud.Ads
  * @since 10
  */
 export interface Advertisement {
   /**
-   * The ad type.
+   * The advertisement type.
    * @type { number }
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
@@ -37,7 +37,7 @@ export interface Advertisement {
   rewardVerifyConfig: Map<string, string>;
 
   /**
-   * The unique identifier of the ad event generation.
+   * The unique identifier of the advertisement.
    * @type { string }
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
@@ -53,7 +53,7 @@ export interface Advertisement {
   rewarded: boolean;
 
   /**
-   * The ad has been shown.
+   * The advertisement has been shown.
    * @type { boolean }
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
@@ -61,7 +61,7 @@ export interface Advertisement {
   shown: boolean;
 
   /**
-   * The ad has been clicked.
+   * The advertisement has been clicked.
    * @type { boolean }
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
@@ -70,9 +70,9 @@ export interface Advertisement {
 
   /**
    * The extended attributes of advertisement.
-   * @type { any }
+   * @type { Object }
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
-  [key:string]: any;
+  [key:string]: Object;
 }

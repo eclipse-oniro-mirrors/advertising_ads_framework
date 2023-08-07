@@ -63,9 +63,9 @@ void ParseAdArray(std::string adsString, std::vector<AAFwk::Want> &ads)
     Json::Value root;
     if (reader.parse(adsString, root)) {
         if (root.type() == Json::arrayValue) {
-            int size = root.size();
-            ADS_HILOGW(OHOS::Cloud::ADS_MODULE_COMMON, "ads size is: %{public}d.", size);
-            for (int i = 0; i < size; i++) {
+            uint32_t size = root.size();
+            ADS_HILOGW(OHOS::Cloud::ADS_MODULE_COMMON, "ads size is: %{public}u.", size);
+            for (uint32_t i = 0; i < size; i++) {
                 ParseSingleAd(ads, root[i]);
             }
         }

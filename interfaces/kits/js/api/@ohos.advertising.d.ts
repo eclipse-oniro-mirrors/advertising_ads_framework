@@ -17,14 +17,14 @@ import common from './@ohos.app.ability.common';
 import { Advertisement as _Advertisement } from './advertising/advertisement';
 
 /**
- * This module provides the capability to load and display advertisements.
+ * Provides the capability to load and display advertisements.
  * @namespace advertising
  * @syscap SystemCapability.Cloud.Ads
  * @since 10
  */
 declare namespace advertising {
   /**
-   * Indicates the advertisement.
+   * Indicates the advertisement data model.
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
@@ -95,7 +95,7 @@ declare namespace advertising {
   }
 
   /**
-   * Load ad options.
+   * The ad options of loading ads.
    * @typedef AdOptions
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
@@ -210,7 +210,7 @@ declare namespace advertising {
   }
 
   /**
-   * The listener of load ad.
+   * The listener of loading ad.
    * @interface AdLoadListener
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
@@ -262,7 +262,7 @@ declare namespace advertising {
   /**
    * Show the reward and interstitial ad.
    * @param { Advertisement } ad - Indicates the advertisement content information.
-   * @param { AdDisplayOptions } option - Indicates interaction option object use to show the ad.
+   * @param { AdDisplayOptions } options - Indicates interaction option object use to show the ad.
    * @param { UIAbilityContext } context - Indicates the ui ability context of the media application.
    * @throws { BusinessError } 401 - Invalid input parameter.
    * @throws { BusinessError } 21800001 - System internal error.
@@ -270,12 +270,10 @@ declare namespace advertising {
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
-  function showAd(ad: Advertisement, option: AdDisplayOptions, context?: common.UIAbilityContext): void;
+  function showAd(ad: Advertisement, options: AdDisplayOptions, context?: common.UIAbilityContext): void;
 
   /**
-   * A class for ad loader.
-   * The AdLoader contains the function of requesting to load ad.
-   * All ad parameters are obtained from this function.
+   * Provides the functions of loading ads.
    * @syscap SystemCapability.Cloud.Ads
    * @since 10
    */
@@ -290,9 +288,9 @@ declare namespace advertising {
 
     /**
      * Load ad.
-     * @param { AdRequestParams } adParam - Indicates the parameters in the request for load ad.
-     * @param { AdOptions } adOptions - Indicates the advertisement configuration.
-     * @param { AdLoadListener } listener - Indicates the listener to be registered that use to load Ad.
+     * @param { AdRequestParams } adParam - Indicates the parameters in the request.
+     * @param { AdOptions } adOptions - Indicates the ad options.
+     * @param { AdLoadListener } listener - Indicates the listener to be registered that use to load ad.
      * @throws { BusinessError } 401 - Invalid input parameter.
      * @throws { BusinessError } 21800001 - System internal error.
      * @throws { BusinessError } 21800003 - Failed to load the ad request.
@@ -303,8 +301,8 @@ declare namespace advertising {
 
     /**
      * Load ad with multi-slots.
-     * @param { AdRequestParams[] } adParams - Indicates the parameters in the request for load ad.
-     * @param { AdOptions } adOptions - Indicates the advertisement configuration.
+     * @param { AdRequestParams[] } adParams - Indicates the parameters in the request.
+     * @param { AdOptions } adOptions - Indicates the ad options.
      * @param { MultiSlotsAdLoadListener } listener - Indicates the listener to be registered that use to load ad.
      * @throws { BusinessError } 401 - Invalid input parameter.
      * @throws { BusinessError } 21800001 - System internal error.

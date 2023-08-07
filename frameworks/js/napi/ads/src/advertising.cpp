@@ -76,8 +76,6 @@ void GetCloudServiceProvider(CloudServiceProvider &cloudServiceProvider)
 {
     char pathBuff[MAX_PATH_LEN];
     GetOneCfgFile(DEPENDENCY_CONFIG_FILE_RELATIVE_PATH.c_str(), pathBuff, MAX_PATH_LEN);
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Config path is %{public}s", pathBuff);
-
     char realPath[PATH_MAX];
     if (realpath(pathBuff, realPath) == nullptr) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Parse realpath fail");
@@ -111,7 +109,7 @@ void GetCloudServiceProvider(CloudServiceProvider &cloudServiceProvider)
     ifs.close();
 
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI,
-        "Cloud Service provider from config bundleName is %{public}s, abilityName is %{public}s, uiAbility is "
+        "Cloud Service from config bundleName is %{public}s, abilityName is %{public}s, uiAbility is "
         "%{public}s",
         cloudServiceProvider.bundleName.c_str(), cloudServiceProvider.abilityName.c_str(),
         cloudServiceProvider.uiAbilityName.c_str());
@@ -373,7 +371,7 @@ napi_value ParseAdvertismentByAd(napi_env &env, napi_value &argv, Advertisment &
     if (GetBoolProperty(env, argv, AD_RESPONSE_CLICKED, advertisment.clicked) == nullptr) {
         return nullptr;
     }
-    if (static_cast<int> (valueCount) > AD_STANDARD_SIZE) {
+    if (static_cast<int>(valueCount) > AD_STANDARD_SIZE) {
         ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "advertisment has extra value");
         std::vector<std::string> keyArray{ AD_RESPONSE_AD_TYPE, AD_RESPONSE_REWARD_CONFIG, AD_RESPONSE_UNIQUE_ID,
             AD_RESPONSE_REWARDED, AD_RESPONSE_SHOWN, AD_RESPONSE_CLICKED };
