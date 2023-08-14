@@ -41,12 +41,6 @@ ohos_shared_library("advertising") {
     "//domains/cloud/advertising/common/ipc/include",
     "//domains/cloud/advertising/common/model/include",
     "./include",
-    "//third_party/node/src",
-    "//third_party/libuv/include",
-    "//foundation/arkui/napi/interfaces/kits/napi",
-    "${ability_base_kits_path}/want/include",
-    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "//third_party/jsoncpp/include/json"
   ]
 
   configs = [ ":native_module_config"]
@@ -65,15 +59,11 @@ ohos_shared_library("advertising") {
   ]
 
   external_deps = [
-    "ability_base:want",
-    "ability_runtime:runtime",
-    "ability_runtime:wantagent_innerkits",
     "ability_runtime:ability_manager",
     "ability_runtime:abilitykit_native",
     "hilog:libhilog",
     "ipc:ipc_core",
     "napi:ace_napi",
-    "samgr:samgr_proxy",
     "c_utils:utils",
     "config_policy:configpolicy_util"
   ]

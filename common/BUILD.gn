@@ -33,20 +33,14 @@ ohos_source_set("advertising_common") {
     "model/src/request_data.cpp",
   ]
 
-  deps = [
-    "//third_party/jsoncpp:jsoncpp",
-  ]
+  deps = []
 
   external_deps = [
     "ability_base:want",
-    "ability_runtime:app_manager",
-    "bundle_framework:appexecfwk_core",
     "hilog:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "napi:ace_napi",
-    "c_utils:utilsbase",
   ]
 
   part_name = "advertising"

@@ -21,8 +21,6 @@ config("advertising_service_config") {
     "${advertising_common_path}/log/include",
     "${advertising_common_path}/model/include",
     "advertising_manager/include",
-    "//utils/system/safwk/native/include",
-    "//third_party/jsoncpp/include",
   ]
 }
 
@@ -31,8 +29,6 @@ ohos_shared_library("advertising_service") {
   configs = [ "${advertising_common_path}:common_config" ]
 
   public_configs = [
-    "//commonlibrary/c_utils/base:utils_config",
-    "//third_party/jsoncpp:jsoncpp_public_config",
     ":advertising_service_config"
   ]
 
@@ -54,17 +50,8 @@ ohos_shared_library("advertising_service") {
   ]
 
   external_deps = [
-    "ability_base:want",
-    "ability_runtime:runtime",
     "ability_runtime:ability_manager",
-    "ability_runtime:wantagent_innerkits",
-    "ability_runtime:abilitykit_native",
     "hilog:libhilog",
-    "ipc:ipc_core",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-    "bundle_framework:appexecfwk_core",
-    "bundle_framework:appexecfwk_base",
     "config_policy:configpolicy_util",
     "c_utils:utilsbase",
   ]
