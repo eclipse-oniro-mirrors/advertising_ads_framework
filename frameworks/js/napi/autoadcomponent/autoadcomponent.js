@@ -106,14 +106,15 @@ class AutoAdComponent extends ViewPU {
     } catch (e) {
       hilog.error(HILOG_DOMAIN_CODE, 'AutoAdComponent', `open file failed with error:${e.code}, message:${e.message}`);
     }
+    e || hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'get config json failed');
     return e;
   }
 
   setWant(e) {
     let t = this.getConfigJsonData();
     this.want = {
-      bundleName: t.providerBundleName,
-      abilityName: t.providerUEAAbilityName,
+      bundleName: null == t ? void 0 : t.providerBundleName,
+      abilityName: null == t ? void 0 : t.providerUEAAbilityName,
       parameters: {
         ads: e,
         displayOptions: this.displayOptions
@@ -155,8 +156,8 @@ class AutoAdComponent extends ViewPU {
   }
 
   initRefreshTime() {
-    if (!(this.displayOptions && this.displayOptions.refreshTime && 
-      'number' === typeof this.displayOptions.refreshTime && this.displayOptions.refreshTime > 0)) {
+    if (!(this.displayOptions && this.displayOptions.refreshTime &&
+        'number' === typeof this.displayOptions.refreshTime && this.displayOptions.refreshTime > 0)) {
       hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent',
         `Invalid input refreshTime, refreshTime is： ${this.refreshTime}.`);
       return !1;

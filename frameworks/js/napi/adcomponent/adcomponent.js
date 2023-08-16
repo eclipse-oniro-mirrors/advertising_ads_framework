@@ -35,11 +35,9 @@ class AdComponent extends ViewPU {
     void 0 !== e.want && (this.want = e.want);
   }
 
-  updateStateVars(e) {
-  }
+  updateStateVars(e) {}
 
-  purgeVariableDependenciesOnElmtId(e) {
-  }
+  purgeVariableDependenciesOnElmtId(e) {}
 
   aboutToBeDeleted() {
     SubscriberManager.Get().delete(this.id__());
@@ -49,8 +47,8 @@ class AdComponent extends ViewPU {
   aboutToAppear() {
     let e = this.getConfigJsonData();
     this.want = {
-      bundleName: e.providerBundleName,
-      abilityName: e.providerUEAAbilityName,
+      bundleName: null == e ? void 0 : e.providerBundleName,
+      abilityName: null == e ? void 0 : e.providerUEAAbilityName,
       parameters: { ads: this.ads, displayOptions: this.displayOptions }
     };
   }
@@ -69,6 +67,7 @@ class AdComponent extends ViewPU {
     } catch (e) {
       hilog.error(HILOG_DOMAIN_CODE, 'AdComponent', `open file failed with error:${e.code}, message:${e.message}`);
     }
+    e || hilog.info(HILOG_DOMAIN_CODE, 'AdComponent', 'get config json failed');
     return e;
   }
 
