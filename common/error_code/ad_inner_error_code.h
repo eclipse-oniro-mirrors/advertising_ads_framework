@@ -73,10 +73,13 @@ const int32_t ERR_AD_COMMON_AD_SA_REMOTE_OBJECT_ERROR = 14;
 const int32_t ERR_AD_COMMON_AD_REQUEST_TO_JSON_ERROR = 15;
 
 // show ad fail
-const int32_t ERR_AD_COMMON_AD_SHOW_AD_ERROR = 15;
+const int32_t ERR_AD_COMMON_AD_SHOW_AD_ERROR = 16;
 
 enum AdsError : int32_t {
     ERR_SEND_OK = 0,
+    PARAM_ERR = 401,
+    INNER_ERR = 21800001,
+    REQUEST_FAIL = 21800003,
 };
 
 } // namespace Cloud

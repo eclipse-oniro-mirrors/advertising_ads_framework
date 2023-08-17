@@ -21,6 +21,8 @@
 #include "napi/native_common.h"
 #include "ad_load_napi_common.h"
 #include "ad_hilog_wreapper.h"
+#include "iad_load_callback.h"
+#include "ad_inner_error_code.h"
 
 namespace OHOS {
 namespace CloudNapi {
@@ -30,6 +32,18 @@ inline void parseAdArray(napi_env env, const std::vector<AAFwk::Want> &adsArray,
     for (uint32_t i = 0; i < adsArray.size(); ++i) {
         napi_value ad = AppExecFwk::WrapWantParams(env, adsArray.at(i).GetParams());
         napi_set_element(env, inpute, i, ad);
+    }
+}
+
+inline int32_t ErrCodeConvert(int32_t kitErrCode)
+{
+    switch (kitErrCode) {
+        case static_cast<int32_t>(Cloud::IAdLoadCallback::Message::AD_LOAD_PARAMS_ERROR):
+            return PARAM_ERR;
+        case static_cast<int32_t>(Cloud::IAdLoadCallback::Message::AD_LOAD_FAIL):
+            return REQUEST_FAIL;
+        default:
+            return INNER_ERR;
     }
 }
 
@@ -184,7 +198,7 @@ void AdLoadListenerCallback::OnAdLoadFailure(int32_t resultCode, const std::stri
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "failed to init ad load work environment");
         return;
     }
-    param->errCode = resultCode;
+    param->errCode = ErrCodeConvert(resultCode);
     param->errMsg = resultMsg;
     param->callback = callback_;
     work->data = reinterpret_cast<void *>(param);
