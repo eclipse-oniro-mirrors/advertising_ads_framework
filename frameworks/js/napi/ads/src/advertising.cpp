@@ -42,6 +42,7 @@ static const int32_t SHOW_AD_PARA = 2;
 static const int32_t AD_LOADER_PARA = 3;
 static const int32_t AD_STANDARD_SIZE = 6;
 const std::string AD_LOADER_CLASS_NAME = "AdLoader";
+const std::string DEFAULT_JSON_STR = "{}";
 thread_local napi_ref Advertising::adRef_ = nullptr;
 static const int32_t STR_MAX_SIZE = 256;
 static const int32_t CUSTOM_DATA_MAX_SIZE = 1024 * 1024; // 1M
@@ -410,7 +411,8 @@ napi_value Advertising::ShowAd(napi_env env, napi_callback_info info)
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "ParseDisplayOptionsByShowAd failed");
         return NapiGetNull(env);
     }
-    std::string displayOptionsString = Json::FastWriter().write(adDisplayOptionsRoot);
+    std::string displayOptionsString =
+        adDisplayOptionsRoot.empty() ? DEFAULT_JSON_STR : Json::FastWriter().write(adDisplayOptionsRoot);
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "enter show ad display is %{public}s", displayOptionsString.c_str());
     Want want;
     Advertisment advertisment;
@@ -494,7 +496,7 @@ napi_value ParseContextForLoadAd(napi_env env, napi_callback_info info, Advertis
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "ParseAdOptionsByLoadAd failed");
         return NapiGetNull(env);
     }
-    std::string optionRootString = Json::FastWriter().write(optionRoot);
+    std::string optionRootString = optionRoot.empty() ? DEFAULT_JSON_STR : Json::FastWriter().write(optionRoot);
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "optionRootString is: %{public}s", optionRootString.c_str());
     context->optionString = optionRootString;
     // argv[2]
@@ -585,7 +587,7 @@ napi_value ParseContextForMultiSlots(napi_env env, napi_callback_info info, Mult
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "parse multi ad option failed");
         return NapiGetNull(env);
     }
-    std::string optionRootString = Json::FastWriter().write(optionRoot);
+    std::string optionRootString = optionRoot.empty() ? DEFAULT_JSON_STR : Json::FastWriter().write(optionRoot);
     ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "optionRootString is: %{public}s", optionRootString.c_str());
     context->mulitOptionString = optionRootString;
     //  argv[2]
