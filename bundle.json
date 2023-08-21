@@ -43,6 +43,9 @@
       "build": {
         "sub_component": [
           "//domains/cloud/advertising:advertising_native_packages"
+        ],
+        "test": [
+          "//domains/cloud/advertising/test/fuzztest:fuzztest"
         ]
       }
     }
