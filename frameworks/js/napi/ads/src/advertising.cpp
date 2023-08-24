@@ -652,7 +652,13 @@ napi_value Advertising::AdvertisingInit(napi_env env, napi_value exports)
 napi_value Advertising::JsConstructor(napi_env env, napi_callback_info info)
 {
     napi_value thisVar = nullptr;
-    NAPI_CALL(env, napi_get_cb_info(env, info, nullptr, nullptr, &thisVar, nullptr));
+    size_t argc = 1;
+    napi_value argv[1] = { nullptr };
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, &thisVar, nullptr);
+    NAPI_ASSERT(env, status == napi_ok, "ad loader get context failed");
+    napi_valuetype valueType = napi_undefined;
+    NAPI_CALL(env, napi_typeof(env, argv[0], &valueType));
+    NAPI_ASSERT(env, valueType == napi_object, "ad loader expect the constructor to use the ability context");
     return thisVar;
 }
 } // namespace AdsNapi
