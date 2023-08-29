@@ -117,7 +117,8 @@ class AutoAdComponent extends ViewPU {
       abilityName: null == t ? void 0 : t.providerUEAAbilityName,
       parameters: {
         ads: e,
-        displayOptions: this.displayOptions
+        displayOptions: this.displayOptions,
+        'ability.want.params.uiExtensionType': 'ads'
       }
     };
   }
