@@ -1,3 +1,2 @@
 # ads_open
 
-null
