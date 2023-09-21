@@ -1,81 +1,79 @@
-# Advertising Service Component
+# 流量变现服务部件
 
-## Introduction
+## 简介
 
-The advertising service enables you to implement ad access without SDK integration, helping you easily monetize your traffic.
+广告服务为您提供流量变现服务，极简接入，无需集成SDK，轻松实现广告的接入，帮助您解决流量变现的难题。
 
-## Directory Structure
+## 目录
 
 ```
-/domain/cloud/advertising # Service code of the advertising service component
-├── frameworks                         # Framework code
-│   └── js                             # External JS API implementation
-│       └── napi                       # External native API implementation
-├── sa_profile                         # Service configuration profile
-├── services                           # Service code
-├── test                               # Test code
-├── LICENSE                            # License file
-├── BUILD.gn                           # Build entry
-└── bundle.json                        # Component description file
+/domain/cloud/advertising  # 流量变现服务部件业务代码
+├── frameworks                         # 框架代码
+│   └── js                             # 外部接口实现
+│       └── napi                       # napi 外部接口实现
+├── sa_profile                         # 服务配置文件
+├── services                           # 服务代码
+├── test                               # 测试代码
+├── LICENSE                            # 证书文件
+├── BUILD.gn                           # 编译入口
+└── bundle.json                        # 部件描述文件
 ```
 
-### Concepts
+### 概念说明
 
 - SA
 
-  SA, short for SystemAbility, is a ipc entity that runs in the server process. After receiving an external request, SA processes the request and returns the processing result, thereby implementing service provisioning for external systems.
+  SA是SystemAbility的缩写，中文名叫系统元能力，运行在服务端的进程中，接收到外部的请求后进行处理并返回处理结果，对外提供服务。
 
+## 使用说明
 
-## How to Use
+广告SA用于接收来自媒体的广告请求，进行处理后将请求转发到广告平台，广告平台需要找到广告内容给SA响应，用于后续的广告内容展示。
 
-The advertising SA receives an ad request, processes the request, and forwards the request to the ad platform. The ad platform finds the best ad content and sends it to the SA for display.
+### 创建广告平台
 
-### Creating an Ad Platform
+以APP开发者为例，描述如何创建广告平台并与系统交互。
 
-The following steps walk you (application developer) through on how to create an ad platform and interact with the system.
+1. 创建ServiceExtensionAbility的服务端组件
 
-1. Create a server component that implements the ServiceExtensionAbility.
-
-   This component is the entry for SA interaction.
+   该组件是与SA交互的入口。
 
    ```javascript
    export default class AdsCoreService extends ServiceExtensionAbility {
      private descriptor = 'com.xxx.xxx';
    
      onCreate(want) {
-       HiAdLog.i(TAG, `service onCreate`);
-       HGlobalVariableManager.set("hmscoreFramework", "coreServiceAbilityContext", this.context);
+       console.i(TAG, `service onCreate`);
      }
    
      onRequest(want, startId) {
-       HiAdLog.i(TAG, `service onRequest`);
+       console.i(TAG, `service onRequest`);
      }
    
      onConnect(want) {
-       HiAdLog.i(TAG, `service onConnect, want: ${JSON.stringify(want)}`);
+       console.i(TAG, `service onConnect, want: ${JSON.stringify(want)}`);
        return new AdsCoreServiceRpcObj(this.descriptor);
      }
    
      onDisconnect(want) {
-       HiAdLog.i(TAG, `service onDisconnect`);
+       console.i(TAG, `service onDisconnect`);
      }
    
      onDestroy() {
-       HiAdLog.i(TAG, `service onDestory`);
+       console.i(TAG, `service onDestory`);
      }
    }
    ```
 
-2. Create an RPC object, which will be returned by the ServiceExtensionAbility server component to the SA.
+2. 创建ServiceExtensionAbility服务端组件返回给SA的RPC对象
 
-   This RPC object is used to receive requests from the SA and send callback data to the SA.
+   该RPC对象用于接收SA请求并向SA发送回调数据。
 
    ```javascript
    import rpc from '@ohos.rpc';
    import bundleManager from '@ohos.bundle.bundleManager';
    
    /**
-    * RPC object returned by AdsCoreService to the caller, which is used by the caller to send data to AdsCoreService.
+    * AdsCoreService返回给调用方的rpc对象，用于调用方向service发送数据
     */
    export default class AdsCoreServiceRpcObj extends rpc.RemoteObject {
      constructor(descriptor) {
@@ -83,38 +81,38 @@ The following steps walk you (application developer) through on how to create an
      }
    
      /**
-      * System API for receiving requests from the SA
+      * 系统接口，接收SA请求
       *
-      * @param code Service request code sent by the peer end.
-      * @param data Object that carries the parameters called by the client. The parameters are called in the following sequence: Uid, RemoteObject, AdRequestParams, AdOptions, and custom collection data. The parameters must be read in the same sequence.
-      * @param reply MessageSequence object to which the result is written.
-      * @param options Whether the operation is synchronous or asynchronous.
+      * @param code 对端发送的服务请求码。
+      * @param data 携带客户端调用参数的对象，客户端调用参数顺序为Uid、RemoteObject、AdRequestParams、AdOptions、自定义采集数据，必须按照此顺序读取。
+      * @param reply 写入结果的MessageSequence对象。
+      * @param options 指示操作是同步还是异步。
       * @returns
       */
      async onRemoteMessageRequest(code: number, data: rpc.MessageSequence, reply: rpc.MessageSequence, options: rpc.MessageOption) {
-       // code: 1, indicating an ad request.
+       // code：1，代表广告请求
        console.info(`onRemoteMessageRequest, the code is: ${code}`);
    
        try {
-         // 1. Read the ad request data in the specified data read sequence.
-         // Read the RPC remote object on the SA side.
+         // 1.读取广告请求数据，约定的数据读取顺序，不可更改
+         // 读取SA侧的rpc远程对象
          const replyRpcObj: rpc.IRemoteObject = data.readRemoteObject();
         const req = {
-          // Read ad request parameters. For details about the data structure, see AdRequestParams in the API document.
+          // 广告请求参数，数据结构参考API文档的AdRequestParams
           reqParams: data.readString(),
-          // Read ad configuration parameters. For details about the data structure, see AdOptions in the API document.
+          // 广告配置参数，数据结构参考API文档的AdOptions
           adOptions: data.readString(),
-          // Read custom collection data.
+          // 自定义采集数据
           collectedData: data.readString(),
         };
-        // 2. Request data validation.
-        // 3. Request ad processing.
-        // Return the ad data. For details, see advertising.Advertisement in the API document.
+        // 2.请求数据校验
+        // 3.请求广告处理
+        // 返回广告数据，参考API文档中的advertising.Advertisement
         const ads: Array<advertising.Advertisement> = [];
-        // 4. Send a response to the SA.
+        // 4.给SA响应数据
         const respData = rpc.MessageSequence.create();
         /**
-         * The following service response codes are possible:
+         * 业务响应码
          * CODE_SUCCESS = 200
          * CODE_INVALID_PARAMETERS = 401
          * CODE_INTERNAL_ERROR = 100001
@@ -136,26 +134,24 @@ The following steps walk you (application developer) through on how to create an
      }
    ```
 
-3. Configure application information.
+3. 配置应用信息
 
-   Modify the **ad_service_config.json** file in **services/advertising_manager/resource**.
+   修改services/advertising_manager/resource/ad_service_config.json文件。
 
-   **providerBundleName**: bundle name of the application, which corresponds to **bundleName** in **app.json5** under **AppScope**.
+   providerBundleName：应用包名。AppScope下app.json5中的bundleName。
 
-   **providerAbilityName**: name of the server component that implements the ServiceExtensionAbility. This component is used to interact with the SA. It is **AdsCoreService** in the preceding example.
+   providerAbilityName：实现了ServiceExtensionAbility的服务端组件名称，该组件用于和SA交互。如上示例中的AdsCoreService
 
-   **providerUIAbilityName**: name of the component that implements the UIAbility. This component is used to display full-screen ads.
+   providerUIAbilityName：实现了UIAbility的组件名称，该组件用于展示全屏广告。
 
-   **providerUEAAbilityName**: name of the component that implements the UIExtensionAbility. This component is used to display non-full-screen ads.
+   providerUEAAbilityName：实现了UIExtensionAbility的组件名称，该组件用于展示非全屏广告。
 
-4. Publish a full-screen ad.
-
-   You can use the common event capability provided by the system to send the interactive operations of the full-screen ad to the application.
-
+4. 全屏广告发布事件
+   通过系统提供的公共事件能力将全屏广告的互动操作发送到APP
 ```javascript
 import commonEvent from '@ohos.commonEventManager';
 
-// Publish a common event.
+// 发布公共事件
 commonEvent.publish("event", (err) => {
   if (err.code) {
     console.error("[CommonEvent]PublishCallBack err=" + JSON.stringify(err))
@@ -165,9 +161,9 @@ commonEvent.publish("event", (err) => {
 })
 ```
 
-### Requesting an Ad
+### 请求广告
 
-To request an ad, you must create an **AdLoader** object and call its **loadAd** method to initiate the request. You also need to use the **AdLoadListener** callback function to listen for the ad loading status.
+请求广告需要创建一个AdLoader对象，通过AdLoader的loadAd方法请求广告。然后通过AdLoadListener回调来监听广告的加载状态。
 
 ```javascript
 import advertising from '@ohos.advertising';
@@ -176,28 +172,28 @@ import common from '@ohos.app.ability.common';
 try {
   const context = getContext(this) as common.UIAbilityContext;
   const adRequestParam = {
-    adType: 3, // Ad type, for example, native ad.
-    adId: "test", // Ad slot ID.
+    adType: 3, // 广告类型：如原生广告
+    adId: "test", // 测试广告位ID
   };
   const adOption = {
-    adContentClassification: 'A', // Set the maximum ad content rating.
+    adContentClassification: 'A', //设置广告内容分级上限
   };
-  // Listen for the ad loading status.
+  // 广告请求回调监听
   const adLoaderListener = {
-    // Called when an ad request fails.
+    // 广告请求失败回调
     onAdLoadFailure: (errorCode: number, errorMsg: string) => {
       console.info(`request ad errorCode is: ${errorCode}, errorMsg is: ${errorMsg}`);
     },
-    // Called when an ad request is successful.
+    // 广告请求成功回调
     onAdLoadSuccess: (ads: Array<advertising.Advertisement>) => {
       console.info(`request ad success!`);
-      // Save the requested ad content for display.
+      // 保存请求到的广告内容用于展示
       const ads = ads;
     }
   };
-  // Create an AdLoader object.
+  // 创建AdLoader广告对象
   const adLoader = new advertising.AdLoader(context);
-  // Call the loadAd method.
+  // 调用广告请求接口
   console.info(`request ad!`);
   adLoader.loadAd(adReqParams, adOptions, adLoaderListener);
 } catch (err) {
@@ -205,13 +201,13 @@ try {
 }
 ```
 
-### Showing a Full-Screen Ad
+### 展示全屏广告
 
-1. Subscribe to the event.
+1. 事件订阅
 
-   Subscribe to the com.company.pps.action.PPS_REWARD_STATUS_CHANGED event to listen for changes on the reward ad page and receive reward information. The subscription must be initiated each time before an ad is displayed.
+   开发者需要在App中订阅com.company.pps.action.PPS_REWARD_STATUS_CHANGED事件来监听激励广告页面变化并接收奖励信息。订阅需要在每次展示广告前调用 。
 
-   After receiving the common event, use **reward_ad_status** and **reward_ad_data** as keys in the **parameters** parameter of [CommonEventData](https://docs.openharmony.cn/pages/v4.0/en/application-dev/reference/apis/js-apis-inner-commonEvent-commonEventData.md/) to obtain changes on the reward ad page and obtain reward information, respectively. You can use the **rewardType** and **rewardAmount** attributes to obtain the name of a reward and its quantity.
+   订阅者接收到公共事件后，可以从[CommonEventData](https://docs.openharmony.cn/pages/v4.0/zh-cn/application-dev/reference/apis/js-apis-inner-commonEvent-commonEventData.md/)的parameters参数中使用"reward_ad_status"作为key值获取激励广告页面变化状态，使用"reward_ad_data"作为key值获取奖励信息，属性rewardType用来获取奖励物品的名称，rewardAmount用来获取奖励物品的数量。
 
    ```javascript
    import commonEvent from '@ohos.commonEventManager';
@@ -220,19 +216,19 @@ try {
    const KEY_REWARD_STATUS = "reward_ad_status";
    
    export class RewardAdStatusHandler {
-     // Used to save the created subscriber object for subsequent subscription and unsubscription.
+     // 用于保存创建成功的订阅者对象，后续使用其完成订阅及退订的动作
      private subscriber;
        
-     // Subscription method, which must be called each time before an ad is displayed.
+     // 订阅方法，需要在每次展示广告前调用
      public registerPPSReceiver(): void {
        if (this.subscriber) {
          this.unRegisterPPSReceiver();
        }
-       // Subscriber information.
+       // 订阅者信息
        const subscribeInfo = {
          events: ["com.company.pps.action.PPS_REWARD_STATUS_CHANGED"],
        };
-       // Callback for subscriber creation.
+       // 创建订阅者回调
        commonEvent.createSubscriber(subscribeInfo, (err, commonEventSubscriber) => {
          if (err) {
            console.error(`createSubscriber error, ${JSON.stringify(err)}`);
@@ -240,7 +236,7 @@ try {
          }
          console.debug(`createSubscriber success`);
          this.subscriber = commonEventSubscriber;
-         // Callback for common event subscription.
+         // 订阅公共事件回调
          if (!this.subscriber) {
            console.warn(`need create subscriber`);
            return;
@@ -249,9 +245,9 @@ try {
            if (err) {
              console.error(`subscribe error, ${JSON.stringify(err)}`);
            } else {
-             // The subscriber receives the common event.
+             // 订阅者成功接收到公共事件
              console.debug(`subscribe data, ${JSON.stringify(commonEventData)}`);
-             // Obtain the changes on the reward ad page.
+             // 获取激励广告页面变化状态
              const status: string = commonEventData.parameters[KEY_REWARD_STATUS];
              switch (status) {
                case AdStatus.AD_OPEN:
@@ -265,7 +261,7 @@ try {
                  this.unRegisterPPSReceiver();
                  break;
                case AdStatus.AD_REWARDED:
-                 // Obtain reward information.
+                 // 获取奖励信息
                  const rewardData = commonEventData.parameters[KEY_REWARD_DATA];
                  const rewardType = rewardData?.rewardType;
                  const rewardAmount = rewardData?.rewardAmount;
@@ -285,7 +281,7 @@ try {
        });
      }
    
-     // Unsubscribe from the event.
+     // 取消订阅
      public unRegisterPPSReceiver(): void {
        commonEvent.unsubscribe(this.subscriber, (err) => {
          if (err) {
@@ -297,7 +293,7 @@ try {
        });
      }
      
-     // Ad page changes
+     // 广告页面变化状态
      enum AdStatus {
        AD_OPEN = "onAdOpen",
        AD_CLICKED = "onAdClick",
@@ -309,9 +305,9 @@ try {
    }
    ```
 
-2. Show an ad.
+2. 展示广告
 
-   Call the **showAd** method to show an ad.
+   调用showAd方法来展示广告。
 
 ```javascript
 import advertising from '@ohos.advertising';
@@ -321,17 +317,17 @@ import common from '@ohos.app.ability.common';
 @Component
 export struct ShowAd {
   private context = getContext(this) as common.UIAbilityContext;
-  // Requested ad content.
+  // 请求到的广告内容
   private ad: advertising.Advertisement = void 0;
-  // Ad display parameters.
+  // 广告展示参数
   private adDisplayOptions: advertising.AdDisplayOptions = {
-	  // Whether to mute the ad. By default, the ad is not muted.
+	  // 是否静音，默认不静音
 	  mute: false,
 	}
 
   build() {
 	Column() {
-      Button ("Show Ad")
+      Button("展示广告")
 		.backgroundColor('#d3d4d6')
 		.fontSize(20)
 		.fontColor('#000')
@@ -343,7 +339,7 @@ export struct ShowAd {
 		.margin({ top: 10, bottom: 5 })
 		.onClick(() => {
 	      try {
-			// Show a full-screen ad, such as a reward ad.
+			// 展示全屏广告，如激励广告
 			advertising.showAd(this.ad, this.adDisplayOptions, this.context);
 	      } catch (err) {
 			hilog.error(0x0000, 'testTag', 'show ad catch error: %{public}d %{public}s', err.code, err.message);
@@ -356,9 +352,9 @@ export struct ShowAd {
 }
 ```
 
-### Showing a Non-Full-Screen Ad
+### 展示非全屏广告
 
-Use the AdComponent component to show a non-full-screen ad.
+在您的页面中使用AdComponent组件展示非全屏广告。
 
 ```javascript
 import advertising from '@ohos.advertising';
@@ -367,20 +363,20 @@ import { AdComponent } from '@ohos.cloud.AdComponent';
 @Entry
 @Component
 export struct ShowAd {
-  // Requested ad content.
+  // 请求到的广告内容
   private ads: Array[advertising.Advertisement] = [];
-  // Ad display parameters.
+  // 广告展示参数
   private adDisplayOptions: advertising.AdDisplayOptions = {
-    // Whether to mute the ad. By default, the ad is not muted.
+    // 是否静音，默认不静音
     mute: false,
   }
 
   build() {
     Column() {
-      // Show a non-full-screen ad, such as a native ad.
+      // AdComponent组件用于展示非全屏广告，如原生广告
       AdComponent({ ads: this.ads, displayOptions: this.adDisplayOptions,
         interactionListener: {
-          // Ad status change callback.
+          // 广告状态变化回调
           onStatusChanged: (status: string, ad: advertising.Advertisement, data: string) => {
             switch(status) {
               case AdStatus.AD_OPEN:
@@ -403,4 +399,4 @@ export struct ShowAd {
 }
 ```
 
-## Repositories Involved
+## 相关仓

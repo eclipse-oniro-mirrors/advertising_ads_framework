@@ -23,10 +23,6 @@ const MAX_REFRESH_TIME = 12e4;
 
 const MIN_REFRESH_TIME = 3e4;
 
-const AD_SIZE_OFFSET = 1;
-
-const AD_LOAD_ONCE_SIZE = 1;
-
 const HILOG_DOMAIN_CODE = 65280;
 const READ_FILE_BUFFER_SIZE = 4096;
 
@@ -121,54 +117,30 @@ class AutoAdComponent extends ViewPU {
       abilityName: null == t ? void 0 : t.providerUEAAbilityName,
       parameters: {
         ads: e,
-        displayOptions: this.displayOptions,
-        'ability.want.params.uiExtensionType': 'ads'
+        displayOptions: this.displayOptions
       }
     };
   }
 
-  requestUEA(e) {
-    let t = [];
-    t.push(e);
-    this.setWant(t);
-    hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'request UI Extension Ability.');
-    this.adChangeStatus++;
-  }
-
-  pullUpPage(e, t) {
-    hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'pull up page from UI Extension Ability.');
-    let i = 0;
-    this.requestUEA(t[i]);
-    if (e - AD_SIZE_OFFSET > 0) {
-      let o = setInterval((() => {
-        i++;
-        this.requestUEA(t[i]);
-        i === e - AD_SIZE_OFFSET && clearInterval(o);
-      }), this.refreshTime);
-    }
-  }
-
-  loadAd(e) {
+  loadAd() {
     hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'start load advertising.');
-    let t = { 
+    let e = {
       onAdLoadFailure: (e, t) => {
         hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', `request ad errorCode is: ${e}, errorMsg is: ${t}`);
-      }, 
-      onAdLoadSuccess: t => {
+      },
+      onAdLoadSuccess: e => {
         hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'request ad success!');
-        this.adsCount = t.length;
-        if (this.adsCount > 0 && e) {
+        this.setWant(e);
+        this.adsCount = e.length;
+        if (this.adsCount > 0) {
           hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', `advertising size is: ${this.adsCount}!`);
-          this.pullUpPage(this.adsCount, t);
-        } else if (this.adsCount > 0 && !e) {
-          hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'is not auto refresh!');
-          this.pullUpPage(1, t);
+          this.adChangeStatus++;
         } else {
           hilog.warn(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'advertising size is 0!');
         }
       }
     };
-    this.loader.loadAd(this.adParam, this.adOptions, t);
+    this.loader.loadAd(this.adParam, this.adOptions, e);
   }
 
   autoRefresh() {
@@ -178,7 +150,7 @@ class AutoAdComponent extends ViewPU {
       this.adsCount--;
       hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', `Auto refresh, adsCount is : ${this.adsCount},
         refreshTime is: ${this.refreshTime} ms.`);
-      this.adsCount <= 0 && this.loadAd(!0);
+      this.adsCount <= 0 && this.loadAd();
     }), this.refreshTime);
     hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', `intervalId is: ${this.intervalId}.`);
   }
@@ -187,25 +159,25 @@ class AutoAdComponent extends ViewPU {
     if (!(this.displayOptions && this.displayOptions.refreshTime &&
         'number' === typeof this.displayOptions.refreshTime && this.displayOptions.refreshTime > 0)) {
       hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent',
-        `Invalid input refreshTime, refreshTime is: ${this.refreshTime}.`);
+        `Invalid input refreshTime, refreshTime is： ${this.refreshTime}.`);
       return !1;
     }
     this.displayOptions.refreshTime < MIN_REFRESH_TIME ? this.refreshTime = MIN_REFRESH_TIME :
       this.displayOptions.refreshTime > MAX_REFRESH_TIME ? this.refreshTime = MAX_REFRESH_TIME :
       this.refreshTime = this.displayOptions.refreshTime;
-    hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', `refreshTime is: ${this.refreshTime} ms.`);
+    hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', `refreshTime is： ${this.refreshTime} ms.`);
     return !0;
   }
 
   aboutToAppear() {
     hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'aboutToAppear.');
     this.loader = new advertising.AdLoader(this.context);
-    if (this.initRefreshTime()) {
-      this.loadAd(!0);
+    let e = this.initRefreshTime();
+    this.loadAd();
+    if (e) {
       hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'Auto refresh advertising.');
       this.autoRefresh();
     } else {
-      this.loadAd(!1);
       hilog.info(HILOG_DOMAIN_CODE, 'AutoAdComponent', 'Load advertising once.');
     }
   }

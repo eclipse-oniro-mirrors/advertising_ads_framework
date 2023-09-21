@@ -49,11 +49,7 @@ class AdComponent extends ViewPU {
     this.want = {
       bundleName: null == e ? void 0 : e.providerBundleName,
       abilityName: null == e ? void 0 : e.providerUEAAbilityName,
-      parameters: { 
-        ads: this.ads, 
-        displayOptions: this.displayOptions,
-        'ability.want.params.uiExtensionType': 'ads'
-      }
+      parameters: { ads: this.ads, displayOptions: this.displayOptions }
     };
   }
 
