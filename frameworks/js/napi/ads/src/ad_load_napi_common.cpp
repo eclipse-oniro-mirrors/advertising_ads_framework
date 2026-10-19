@@ -133,8 +133,20 @@ void UvQueneWorkOnAdLoadMultiSlotsSuccess(uv_work_t *work, int status)
         return;
     }
     AdCallbackParam *data = reinterpret_cast<AdCallbackParam *>(work->data);
+    if (data->env == nullptr) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Environment is already destroyed");
+        delete data;
+        delete work;
+        return;
+    }
     napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(data->env, &scope);
+    napi_status nstatus = napi_open_handle_scope(data->env, &scope);
+    if (nstatus != napi_ok || scope == nullptr) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Failed to open handle scope");
+        delete data;
+        delete work;
+        return;
+    }
     napi_value result = nullptr;
     napi_create_string_utf8(data->env, data->multiAds.c_str(), NAPI_AUTO_LENGTH, &result);
     napi_value undefined = nullptr;
@@ -157,8 +169,20 @@ void UvQueneWorkOnAdLoadFailed(uv_work_t *work, int status)
         return;
     }
     AdCallbackParam *data = reinterpret_cast<AdCallbackParam *>(work->data);
+    if (data->env == nullptr) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Environment is already destroyed");
+        delete data;
+        delete work;
+        return;
+    }
     napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(data->env, &scope);
+    napi_status nstatus = napi_open_handle_scope(data->env, &scope);
+    if (nstatus != napi_ok || scope == nullptr) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "Failed to open handle scope");
+        delete data;
+        delete work;
+        return;
+    }
     napi_value results[2] = {0};
     napi_create_int32(data->env, data->errCode, &results[0]);
     napi_create_string_utf8(data->env, data->errMsg.c_str(), NAPI_AUTO_LENGTH, &results[1]);
