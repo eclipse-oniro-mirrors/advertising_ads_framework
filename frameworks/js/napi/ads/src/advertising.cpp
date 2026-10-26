@@ -570,7 +570,6 @@ napi_value Advertising::ShowAd(napi_env env, napi_callback_info info)
         cJSON_Delete(adDisplayOptionsRoot);
         return NapiGetNull(env);
     }
-    // assemble
     AssembShowAdParas(want, advertisment, adRoot);
     cJSON_Delete(adRoot);
     CloudServiceProvider cloudServiceProvider;
@@ -578,7 +577,8 @@ napi_value Advertising::ShowAd(napi_env env, napi_callback_info info)
     want.SetParam(AD_DISPLAY_OPTIONS, displayOptionsString);
     ShowAdHandler(env, argv[CONTEXT_INDEX], want, cloudServiceProvider, adDisplayOptionsRoot);
     cJSON_Delete(adDisplayOptionsRoot);
-    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "end ShowAd");
+    ADS_HILOGI(OHOS::Cloud::ADS_MODULE_JS_NAPI, "end ShowAd, display is %{private}s",
+        displayOptionsString.c_str());
     return NapiGetNull(env);
 }
 
@@ -848,13 +848,15 @@ napi_value ParseAdRequestBodyParms(napi_env env, napi_callback_info info, GetAdR
     cJSON *parms = cJSON_CreateArray();
     if (parms == nullptr) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "cJSON_CreateArray failed for parms");
-        napi_throw_error(env, std::to_string(PARAM_ERROR_CODE).c_str(), "Parameter error.");
+        napi_throw_error(env, std::to_string(PARAM_ERROR_CODE).c_str(),
+            "Parameter error. adRequestParams is invalid.");
         return NapiGetNull(env);
     }
     if (!GetAdsArray(env, argv[0], parms)) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "parse get request body parms failed");
         cJSON_Delete(parms);
-        napi_throw_error(env, std::to_string(PARAM_ERROR_CODE).c_str(), "Parameter error.");
+        napi_throw_error(env, std::to_string(PARAM_ERROR_CODE).c_str(),
+            "Parameter error. adRequestParams is invalid.");
         return NapiGetNull(env);
     }
     std::string parmsString = AdJsonUtil::ToString(parms);
@@ -864,13 +866,15 @@ napi_value ParseAdRequestBodyParms(napi_env env, napi_callback_info info, GetAdR
     cJSON *optionsObject = cJSON_CreateObject();
     if (optionsObject == nullptr) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "cJSON_CreateObject failed for optionsObject");
-        napi_throw_error(env, std::to_string(PARAM_ERROR_CODE).c_str(), "Parameter error.");
+        napi_throw_error(env, std::to_string(PARAM_ERROR_CODE).c_str(),
+            "Parameter error. adOptions is invalid.");
         return NapiGetNull(env);
     }
     if (ParseObjectFromJs(env, argv[1], optionsObject) == nullptr) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "parse get request body options failed");
         cJSON_Delete(optionsObject);
-        napi_throw_error(env, std::to_string(PARAM_ERROR_CODE).c_str(), "Parameter error.");
+        napi_throw_error(env, std::to_string(PARAM_ERROR_CODE).c_str(),
+            "Parameter error. adOptions is invalid.");
         return NapiGetNull(env);
     }
     std::string optionString = DEFAULT_JSON_STR;

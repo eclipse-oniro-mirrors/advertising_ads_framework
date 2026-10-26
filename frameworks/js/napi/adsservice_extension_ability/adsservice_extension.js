@@ -253,7 +253,8 @@ class AdsCoreServiceRpcObj extends rpc.RemoteObject {
     ];
     if (!isUndefined(adType) && adType !== -1 && adTypeArray.indexOf(adType) === -1) {
       hilog.error(HILOG_DOMAIN_CODE, 'AdsCoreServiceRpcObj', `adType ${adType} is invalid`);
-      return `adType ${adType} is invalid, ${RpcReqCallbackErrorMsg_401.AD_TYPE_ERROR};\n`;
+      return `Parameter error. adType ${adType} is invalid,
+        ${RpcReqCallbackErrorMsg_401.AD_TYPE_ERROR}.\n`;
     }
     return null;
   }
@@ -266,7 +267,8 @@ class AdsCoreServiceRpcObj extends rpc.RemoteObject {
     if (isNumber(adSize) && adSize > 0) {
       return null;
     }
-    return `${typeName} ${adSize} is invalid, ${typeName} ${RpcReqCallbackErrorMsg_401.AD_SIZE_ERROR};\n`;
+    return `Parameter error. ${typeName} ${adSize} is invalid,
+      ${typeName} ${RpcReqCallbackErrorMsg_401.AD_SIZE_ERROR}.\n`;
   }
 
   private parseAdRequestParams(isMultiSlots, reqData, packageName, requestStartTime) {
@@ -361,10 +363,10 @@ const RpcReqCallbackMsg = {
 }
 
 const RpcReqCallbackErrorMsg_401 = {
-  AD_REQUEST_PARAMS_NOT_JSON_ERROR:`adRequestParams is not a json string`,
-  MULTI_AD_REQUEST_PARAMS_EMPTY_ERROR:`adRequestParams array is empty`,
-  AD_ID_NECESSARY_ERROR:`adId is required`,
-  MULTI_AD_IDS_NECESSARY_ERROR:`All ad ids are required`,
+  AD_REQUEST_PARAMS_NOT_JSON_ERROR:`Parameter error. adRequestParams is not a json string`,
+  MULTI_AD_REQUEST_PARAMS_EMPTY_ERROR:`Parameter error. adRequestParams array is empty`,
+  AD_ID_NECESSARY_ERROR:`Parameter error. adId is required`,
+  MULTI_AD_IDS_NECESSARY_ERROR:`Parameter error. All ad ids are required`,
   AD_TYPE_ERROR:`adType must be number and valid`,
   AD_SIZE_ERROR:`must be number and greater than zero`,
 }
