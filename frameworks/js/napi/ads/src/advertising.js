@@ -312,7 +312,7 @@ function registerWebAdInterface(controller, context, needRefresh) {
     hilog.error(HILOG_DOMAIN_CODE, 'advertising', `parameter controller or context is null`);
     throw {
       code: 401,
-      message: 'Parameter error, controller or context is null.'
+      message: 'Parameter error. controller or context is null.'
     };
   }
   try {
@@ -337,7 +337,7 @@ function deleteWebAdInterface(controller, needRefresh) {
     hilog.error(HILOG_DOMAIN_CODE, 'advertising', `parameter controlleris null`);
     throw {
       code: 401,
-      message: 'Parameter error, controller is null.'
+      message: 'Parameter error. controller is null.'
     };
   }
   try {
@@ -396,14 +396,14 @@ async function getAdRequestBody(adParams, adOptions) {
     hilog.error(HILOG_DOMAIN_CODE, 'advertising', `Parameter verification failed, code: ${AdsError.PARAM_ERR}`);
     throw {
       code: AdsError.PARAM_ERR,
-      message: 'Mandatory parameters are left unspecified.'
+      message: 'Parameter error. Mandatory parameters are left unspecified.'
     };
   }
   if (!Array.isArray(adParams) || (typeof adOptions !== 'object')) {
     hilog.error(HILOG_DOMAIN_CODE, 'advertising', `Parameter verification failed, code: ${AdsError.PARAM_ERR}`);
     throw {
         code: AdsError.PARAM_ERR,
-        message: 'Incorrect parameter types.'
+        message: 'Parameter error. Incorrect parameter types.'
     };
   }
   // 校验字段
@@ -460,7 +460,7 @@ function createConnectionOptions(listener, adResponse) {
     onFailed() {
       throw {
         code: AdsError.PARAM_ERR,
-        message: 'RPC connection failed.'
+        message: 'Parameter error. RPC connection failed.'
       };
     }
   };
