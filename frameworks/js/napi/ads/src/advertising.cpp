@@ -743,10 +743,10 @@ napi_value Advertising::ParseContextForMultiSlots(napi_env env, napi_callback_in
     napi_value argv[AD_LOADER_PARA] = { nullptr };
     napi_value thisVar = nullptr;
     napi_get_cb_info(env, info, &argc, argv, &thisVar, nullptr);
-    if (!ParseMultiSlotsRequest(env, argv, context)) {
+    if (!ParseMultiSlotsRequest(env, argv, argc, context)) {
         return NapiGetNull(env);
     }
-    if (!ParseMultiSlotsOption(env, argv, context)) {
+    if (!ParseMultiSlotsOption(env, argv, argc, context)) {
         return NapiGetNull(env);
     }
     AdJSCallback callback;
@@ -759,8 +759,13 @@ napi_value Advertising::ParseContextForMultiSlots(napi_env env, napi_callback_in
     return NapiGetNull(env);
 }
 
-bool Advertising::ParseMultiSlotsRequest(napi_env env, napi_value argv[], MultiSlotsRequestContext *context)
+bool Advertising::ParseMultiSlotsRequest(napi_env env, napi_value argv[], size_t argc,
+    MultiSlotsRequestContext *context)
 {
+    if (argc <= MultiSlotsParamPos::PARAM_REQ_DATA) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "wrong number of multi slots request arguments");
+        return false;
+    }
     cJSON *requestRoot = cJSON_CreateArray();
     if (requestRoot == nullptr) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "cJSON_CreateArray failed for requestRoot");
@@ -785,8 +790,13 @@ bool Advertising::ParseMultiSlotsRequest(napi_env env, napi_value argv[], MultiS
     return true;
 }
 
-bool Advertising::ParseMultiSlotsOption(napi_env env, napi_value argv[], MultiSlotsRequestContext *context)
+bool Advertising::ParseMultiSlotsOption(napi_env env, napi_value argv[], size_t argc,
+    MultiSlotsRequestContext *context)
 {
+    if (argc <= MultiSlotsParamPos::PARAM_OPTION) {
+        ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "wrong number of multi slots option arguments");
+        return false;
+    }
     cJSON *optionRoot = cJSON_CreateObject();
     if (optionRoot == nullptr) {
         ADS_HILOGW(OHOS::Cloud::ADS_MODULE_JS_NAPI, "cJSON_CreateObject failed for optionRoot");
