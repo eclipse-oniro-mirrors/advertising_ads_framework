@@ -88,6 +88,7 @@ class AdComponent extends ViewPU {
     this.__Behavior = new ObservedPropertySimplePU(HitTestMode.Default, this, 'Behavior');
     this.__uecHeight = new ObservedPropertySimplePU('100%', this, 'uecHeight');
     this.adRenderer = this.Component;
+    this.logoLayout = null;
     this.__rollPlayState = new SynchedPropertySimpleOneWayPU(p1.rollPlayState, this, 'rollPlayState');
     this.AdStateCallbackStub = null;
     this.stateCallbackStub = null;
@@ -116,6 +117,7 @@ class AdComponent extends ViewPU {
       'Behavior',
       'uecHeight',
       'adRenderer',
+      'logoLayout',
     ];
 
     properties.forEach(prop => {
@@ -617,8 +619,19 @@ class AdComponent extends ViewPU {
     this.ifElseBranchUpdateFunction(0, () => {
       this.observeComponentCreation2((r, s) => this.onColumnStateChange(), Column);
       this.adRenderer.bind(this)();
+      if (this.logoLayout && this.isHalfScreenSplash()) {
+        this.logoLayout.bind(this)();
+      }
       Column.pop();
     });
+  }
+
+  isHalfScreenSplash() {
+    const ad = this.ads?.[0];
+    if (!ad) {
+      return false;
+    }
+    return ad.adType === 1 && ad.isFullScreen === false;
   }
 
   initialRender() {
