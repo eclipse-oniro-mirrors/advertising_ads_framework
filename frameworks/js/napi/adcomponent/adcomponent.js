@@ -27,7 +27,62 @@ const INIT = 0;
 const IMP = 1;
 const CLICK = 2;
 const CLOSE = 3;
+const INTERACTION_TOUCH = 4;
+const INTERACTION_SENSOR = 5;
+const FEEDBACK_CLICK = 6;
 const CODE_SUCCESS = 200;
+const SPLASH = 1;
+
+const TYPE_MAIN = 'main';
+const TYPE_INTERACTION = 'interaction';
+const TYPE_FEEDBACK = 'feedback';
+
+const INTERACTION_TYPE_SLIDE = 1;
+const INTERACTION_TYPE_SHAKE = 2;
+const INTERACTION_TYPE_TWIST = 3;
+const INTERACTION_TYPE_TILT = 4;
+const SENSOR_INTERACTION_TYPES = [INTERACTION_TYPE_SHAKE, INTERACTION_TYPE_TWIST, INTERACTION_TYPE_TILT];
+
+const TOUCH_TYPE_DOWN = 0;
+const TOUCH_TYPE_UP = 1;
+const TOUCH_TYPE_MOVE = 2;
+const TOUCH_TYPE_CANCEL = 3;
+
+const EVENT_FIELD_BUILDERS = {
+  [INIT]: ({ fields, component }) => {
+    fields.options = JSON.stringify(component.displayOptions);
+  },
+  [IMP]: ({ fields, w, visible }) => {
+    fields.ratio = w.toString();
+    fields.visible = visible ? 'true' : 'false';
+  },
+  [CLICK]: ({ fields, event }) => {
+    fields.xAxis = event.tapLocation?.x;
+    fields.yAxis = event.tapLocation?.y;
+    fields.event = JSON.stringify(event);
+  },
+  [CLOSE]: () => {
+  },
+  [INTERACTION_TOUCH]: ({ fields, event }) => {
+    fields.interactionType = event.interactionType.toString();
+    fields.x = event.x.toString();
+    fields.y = event.y.toString();
+    fields.displayX = event.displayX.toString();
+    fields.displayY = event.displayY.toString();
+    fields.touchType = event.touchType.toString();
+    fields.touchId = event.touchId.toString();
+    fields.timestamp = event.timestamp.toString();
+  },
+  [INTERACTION_SENSOR]: ({ fields, event }) => {
+    fields.interactionType = event.interactionType.toString();
+    fields.visible = event.visible ? 'true' : 'false';
+  },
+  [FEEDBACK_CLICK]: ({ fields, event }) => {
+    fields.feedbackComponentId = event.feedbackComponentId || '';
+    fields.xAxis = event.xAxis?.toString() || '';
+    fields.yAxis = event.yAxis?.toString() || '';
+  }
+};
 const AdMainCounterMap = new Map();
 
 const AdConnectionManager = {
@@ -234,8 +289,41 @@ class AdComponent extends ViewPU {
       visible: '',
       xAxis: '',
       yAxis: '',
-      event: ''
+      event: '',
+      interactionType: '',
+      x: '',
+      y: '',
+      displayX: '',
+      displayY: '',
+      touchType: '',
+      touchId: '',
+      timestamp: '',
+      feedbackComponentId: ''
     };
+  }
+
+  buildEventFields(u, w, visible, event) {
+    const fields = this.getAdEventFields();
+    fields.adUniqueId = this.uniqueId || '';
+    fields.eventUniqueId = this.eventUniqueId || '';
+    fields.abilityName = this.context?.abilityInfo?.abilityName || '';
+    const builder = EVENT_FIELD_BUILDERS[u];
+    if (!builder) {
+      hilog.warn(HILOG_DOMAIN_CODE, 'AdComponent', `unknown: ${u}`);
+      return fields;
+    }
+    builder({ fields, component: this, w, visible, event });
+    return fields;
+  }
+
+  filterEmptyFields(fields) {
+    const params = {};
+    Object.keys(fields).forEach(key => {
+      if (fields[key] !== undefined && fields[key] !== '') {
+        params[key] = fields[key];
+      }
+    });
+    return params;
   }
 
   createRpcData(u, w = 0, visible = false, event = null) {
@@ -245,58 +333,31 @@ class AdComponent extends ViewPU {
       return null;
     }
 
-    let y = rpc.MessageSequence.create();
-    y.writeInterfaceToken(AdConnectionManager.remoteObj?.getDescriptor());
+    const fields = this.buildEventFields(u, w, visible, event);
+
+    const y = rpc.MessageSequence.create();
+    y.writeInterfaceToken(remoteObj.getDescriptor());
     y.writeInt(u);
 
-    const adUniqueId = this.uniqueId || '';
-    const eventUniqueId = this.eventUniqueId || '';
-    const abilityName = this.context?.abilityInfo?.abilityName || '';
-
-    const fields = this.getAdEventFields();
-    fields.adUniqueId = this.uniqueId || '';
-    fields.eventUniqueId = this.eventUniqueId || '';
-    fields.abilityName = abilityName || '';
-    switch (u) {
-      case INIT:
-        fields.options = JSON.stringify(this.displayOptions);
-        break;
-      case IMP:
-        fields.ratio = w.toString();
-        fields.visible = visible ? 'true' : 'false';
-        break;
-      case CLICK:
-        fields.xAxis = event.tapLocation?.x;
-        fields.yAxis = event.tapLocation?.y;
-        fields.abilityName = abilityName || '';
-        fields.event = JSON.stringify(event);
-        break;
-      case CLOSE:
-        break;
-      default:
-        hilog.warn(HILOG_DOMAIN_CODE, 'AdComponent', `unknown: ${u}`);
-        break;
-    }
-    const params = {};
-    Object.keys(fields).forEach(key => {
-      if (fields[key] !== undefined && fields[key] !== '') {
-        params[key] = fields[key];
-      }
-    });
-    const jsonStr = JSON.stringify(params);
+    const jsonStr = JSON.stringify(this.filterEmptyFields(fields));
     y.writeString(jsonStr);
-    if (u === INIT) {
-      if (!this.stateCallbackStub) {
-        this.stateCallbackStub = new AdStateCallbackStub(this);
-      }
-      y.writeRemoteObject(this.stateCallbackStub);
-    }
-    hilog.debug(HILOG_DOMAIN_CODE, 'AdComponent', `send json params: ${jsonStr}`);
+    this.writeStateCallbackIfInit(u, y);
+    hilog.info(HILOG_DOMAIN_CODE, 'AdComponent', `send json params: ${jsonStr}`);
     return y;
   }
 
+  writeStateCallbackIfInit(u, y) {
+    if (u !== INIT) {
+      return;
+    }
+    if (!this.stateCallbackStub) {
+      this.stateCallbackStub = new AdStateCallbackStub(this);
+    }
+    y.writeRemoteObject(this.stateCallbackStub);
+  }
+
   async sendDataRequest(u, ratio = 0, visible = false, event = null) {
-    hilog.debug(HILOG_DOMAIN_CODE, 'AdComponent', `AdComponent sendDataRequest: ${u}`);
+    hilog.info(HILOG_DOMAIN_CODE, 'AdComponent', `AdComponent sendDataRequest: ${u}`);
     const y = this.createRpcData(u, ratio, visible, event);
     if (!AdConnectionManager.remoteObj || !y) {
       hilog.info(HILOG_DOMAIN_CODE, 'AdComponent', 'AdComponent reconnet');
@@ -369,6 +430,7 @@ class AdComponent extends ViewPU {
       this.showComponent = true;
     }
     this.connectServiceExtAbility();
+    this.sendInteractionSensorMountEvent();
   }
 
   checkMainAdDuplicate() {
@@ -378,7 +440,7 @@ class AdComponent extends ViewPU {
     if (!type || !adUniqueId) {
       return false;
     }
-    if (type !== 'main') {
+    if (type !== TYPE_MAIN) {
       return false;
     }
     let count = AdMainCounterMap.get(adUniqueId) || 0;
@@ -398,7 +460,7 @@ class AdComponent extends ViewPU {
   clearMainAdCounter() {
     const uniqueId = this.uniqueId;
     const type = this.displayOptions?.type;
-    if (type === 'main' && uniqueId) {
+    if (type === TYPE_MAIN && uniqueId) {
       AdMainCounterMap.delete(uniqueId);
       hilog.info(HILOG_DOMAIN_CODE, 'AdComponent', `clear uniqueId: ${uniqueId}`);
     }
@@ -583,11 +645,73 @@ class AdComponent extends ViewPU {
 
   onAreaClick(clickEvent) {
     let t;
+    const type = this.displayOptions?.type;
+    if (type === TYPE_INTERACTION || type === TYPE_FEEDBACK) {
+      return;
+    }
     hilog.debug(HILOG_DOMAIN_CODE, 'AdComponent', `AdComponent onClick, type:${this.displayOptions?.isClickable}`);
     if (this.displayOptions?.isClickable && this.isAdRenderer) {
       const u = CLICK;
       this.sendDataRequest(u, 0, false, clickEvent);
     }
+  }
+
+  onAdTouch(touchEvent) {
+    const type = this.displayOptions?.type;
+    const interactionType = this.displayOptions?.interactionType;
+    if (type !== TYPE_INTERACTION || interactionType !== INTERACTION_TYPE_SLIDE || !this.isAdRenderer) {
+      return;
+    }
+    if (!touchEvent.touches || touchEvent.touches.length === 0) {
+      return;
+    }
+    const event = {
+      interactionType: INTERACTION_TYPE_SLIDE,
+      x: touchEvent.touches[0].x,
+      y: touchEvent.touches[0].y,
+      displayX: touchEvent.touches[0].screenX,
+      displayY: touchEvent.touches[0].screenY,
+      touchType: this.mapTouchType(touchEvent.type),
+      touchId: touchEvent.touches[0].id || 0,
+      timestamp: Date.now()
+    };
+    this.sendDataRequest(INTERACTION_TOUCH, 0, false, event);
+  }
+
+  mapTouchType(type) {
+    switch (type) {
+      case TOUCH_TYPE_DOWN: return TOUCH_TYPE_DOWN;
+      case TOUCH_TYPE_UP: return TOUCH_TYPE_UP;
+      case TOUCH_TYPE_MOVE: return TOUCH_TYPE_MOVE;
+      case TOUCH_TYPE_CANCEL: return TOUCH_TYPE_CANCEL;
+      default: return TOUCH_TYPE_DOWN;
+    }
+  }
+
+  sendInteractionSensorMountEvent() {
+    const type = this.displayOptions?.type;
+    const interactionType = this.displayOptions?.interactionType;
+    if (type !== TYPE_INTERACTION || !SENSOR_INTERACTION_TYPES.includes(interactionType) || !this.isAdRenderer) {
+      return;
+    }
+    const event = {
+      interactionType: interactionType,
+      visible: true
+    };
+    this.sendDataRequest(INTERACTION_SENSOR, 0, true, event);
+  }
+
+  onFeedbackClick(clickEvent) {
+    const type = this.displayOptions?.type;
+    if (type !== TYPE_FEEDBACK || !this.isAdRenderer) {
+      return;
+    }
+    const event = {
+      feedbackComponentId: this.displayOptions?.feedbackComponentId || '',
+      xAxis: clickEvent.tapLocation?.x || clickEvent.x || 0,
+      yAxis: clickEvent.tapLocation?.y || clickEvent.y || 0
+    };
+    this.sendDataRequest(FEEDBACK_CLICK, 0, false, event);
   }
 
   onColumnStateChange() {
@@ -596,15 +720,34 @@ class AdComponent extends ViewPU {
     Column.hitTestBehavior(this.Behavior);
     Column.onVisibleAreaChange(this.ratios, (v, w) => {
       const type = this.displayOptions?.type;
-      if ((type === 'main') && this.isAdRenderer) {
+      if ((type === TYPE_MAIN) && this.isAdRenderer) {
         hilog.debug(HILOG_DOMAIN_CODE, 'AdComponent', `AdComponent isVisible is :${v}, currentRatio is :${w}, type:${type}`);
         const u = IMP;
         this.sendDataRequest(IMP, w, v);
       }
+      const interactionType = this.displayOptions?.interactionType;
+      if (type === TYPE_INTERACTION && SENSOR_INTERACTION_TYPES.includes(interactionType) && this.isAdRenderer) {
+        const event = {
+          interactionType: interactionType,
+          visible: v
+        };
+        this.sendDataRequest(INTERACTION_SENSOR, 0, v, event);
+      }
+    });
+    Column.onTouch((touchEvent) => {
+      this.onAdTouch(touchEvent);
     });
     globalThis.Gesture.create(GesturePriority.Parallel);
     TapGesture.create();
     TapGesture.onAction((event) => {
+      const type = this.displayOptions?.type;
+      if (type === TYPE_FEEDBACK) {
+        this.onFeedbackClick(event);
+        return;
+      }
+      if (type === TYPE_INTERACTION) {
+        return;
+      }
       hilog.debug(HILOG_DOMAIN_CODE, 'AdComponent', `AdComponent onClick, type:${this.displayOptions?.isClickable}`);
       if (this.displayOptions?.isClickable && this.isAdRenderer) {
         const u = CLICK;
@@ -631,7 +774,7 @@ class AdComponent extends ViewPU {
     if (!ad) {
       return false;
     }
-    return ad.adType === 1 && ad.isFullScreen === false;
+    return ad.adType === SPLASH && ad.isFullScreen === false;
   }
 
   initialRender() {
